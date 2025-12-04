@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  
+  <?define ProductVersion="1.0.0.0" ?>
+  <?define ProductName="File Monitor System" ?>
+  <?define Manufacturer="Your Company" ?>
+  <?define UpgradeCode="{12345678-1234-1234-1234-123456789012}" ?>
+
+  <Package 
+    Name="$(var.ProductName)" 
+    Version="$(var.ProductVersion)" 
+    Manufacturer="$(var.Manufacturer)"
+    UpgradeCode="$(var.UpgradeCode)"
+    Language="1049"
+    Codepage="1251">
+
+    <SummaryInformation 
+      Description="Система мониторинга использования файлов на Windows Server"
+      Manufacturer="$(var.Manufacturer)"
+      Keywords="File Monitor, SMB, Windows Service" />
+
+    <!-- Upgrade логика -->
+    <MajorUpgrade 
+      DowngradeErrorMessage="Более новая версия уже установлена."
+      Schedule="afterInstallInitialize" />
+
+    <!-- Медиа -->
+    <Media Id="1" Cabinet="FileMonitor.cab" EmbedCab="yes" />
+
+    <!-- Свойства для настройки сервера -->
+    <Property Id="SERVER_ADDRESS" Value="localhost" />
+    <Property Id="SERVER_PORT" Value="5000" />
+    
+    <!-- Директории установки -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="File Monitor System">
+        <Directory Id="SERVER_DIR" Name="Service" />
+        <Directory Id="CLIENT_DIR" Name="Client" />
+      </Directory>
+    </StandardDirectory>
+
+    <!-- Ссылки на компоненты -->
+    <Feature Id="ProductFeature" Title="File Monitor System" Level="1" Display="expand">
+      
+      <Feature Id="ServerFeature" 
+               Title="Серверная служба (FileMonitorService)" 
+               Description="Windows Service для мониторинга открытых файлов на сервере."
+               Level="1"
+               ConfigurableDirectory="SERVER_DIR">
+        <ComponentGroupRef Id="ServerComponents" />
+        <ComponentRef Id="ServerServiceComponent" />
+      </Feature>
+
+      <Feature Id="ClientFeature" 
+               Title="Клиентское расширение (Shell Extension)" 
+               Description="Расширение контекстного меню Windows Explorer."
+               Level="1"
+               ConfigurableDirectory="CLIENT_DIR">
+        <ComponentGroupRef Id="ClientComponents" />
+        <ComponentRef Id="ClientRegistrationComponent" />
+      </Feature>
+      
+    </Feature>
+
+    <!-- Кастомные действия -->
+    
+    <!-- Установка службы сервера -->
+    <CustomAction Id="InstallServerService" 
+                  Directory="SERVER_DIR" 
+                  ExeCommand="cmd.exe /c &quot;sc create FileMonitorService binPath=&quot;[SERVER_DIR]FileMonitorService.exe&quot; start=auto&quot;"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <CustomAction Id="StartServerService" 
+                  Directory="SERVER_DIR" 
+                  ExeCommand="cmd.exe /c &quot;sc start FileMonitorService&quot;"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <CustomAction Id="StopServerService" 
+                  Directory="SERVER_DIR" 
+                  ExeCommand="cmd.exe /c &quot;sc stop FileMonitorService&quot;"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <CustomAction Id="UninstallServerService" 
+                  Directory="SERVER_DIR" 
+                  ExeCommand="cmd.exe /c &quot;sc delete FileMonitorService&quot;"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <!-- Регистрация клиента -->
+    <CustomAction Id="RegisterClientShellExtension" 
+                  Directory="CLIENT_DIR" 
+                  ExeCommand="[SystemFolder]regasm.exe &quot;[CLIENT_DIR]FileMonitorClient.dll&quot; /codebase /nologo"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <CustomAction Id="RegisterClientShellExtension64" 
+                  Directory="CLIENT_DIR" 
+                  ExeCommand="[System64Folder]regasm.exe &quot;[CLIENT_DIR]FileMonitorClient.dll&quot; /codebase /nologo"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <CustomAction Id="UnregisterClientShellExtension" 
+                  Directory="CLIENT_DIR" 
+                  ExeCommand="[SystemFolder]regasm.exe &quot;[CLIENT_DIR]FileMonitorClient.dll&quot; /unregister /nologo"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <CustomAction Id="UnregisterClientShellExtension64" 
+                  Directory="CLIENT_DIR" 
+                  ExeCommand="[System64Folder]regasm.exe &quot;[CLIENT_DIR]FileMonitorClient.dll&quot; /unregister /nologo"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <CustomAction Id="RestartExplorer" 
+                  Directory="TARGETDIR" 
+                  ExeCommand="cmd.exe /c &quot;taskkill /f /im explorer.exe &amp; start explorer.exe&quot;"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <!-- Последовательность установки -->
+    <InstallExecuteSequence>
+      <!-- Сервер: остановка службы перед установкой/удалением -->
+      <Custom Action="StopServerService" Before="InstallFiles" Condition="(&amp;ServerFeature=3) OR ((REMOVE=&quot;ALL&quot;) AND (&amp;ServerFeature=2))" />
+      
+      <!-- Сервер: установка -->
+      <Custom Action="InstallServerService" After="InstallFiles" Condition="(NOT REMOVE) AND (&amp;ServerFeature=3)" />
+      <Custom Action="StartServerService" After="InstallServerService" Condition="(NOT REMOVE) AND (&amp;ServerFeature=3)" />
+      
+      <!-- Сервер: удаление -->
+      <Custom Action="UninstallServerService" Before="RemoveFiles" Condition="(REMOVE=&quot;ALL&quot;) AND (&amp;ServerFeature=2)" />
+
+      <!-- Клиент: установка -->
+      <Custom Action="RegisterClientShellExtension" After="InstallFiles" Condition="(NOT REMOVE) AND (&amp;ClientFeature=3)" />
+      <Custom Action="RegisterClientShellExtension64" After="RegisterClientShellExtension" Condition="(NOT REMOVE) AND (&amp;ClientFeature=3) AND VersionNT64" />
+      <Custom Action="RestartExplorer" After="RegisterClientShellExtension64" Condition="(NOT REMOVE) AND (&amp;ClientFeature=3)" />
+
+      <!-- Клиент: удаление -->
+      <Custom Action="UnregisterClientShellExtension" Before="RemoveFiles" Condition="(REMOVE=&quot;ALL&quot;) AND (&amp;ClientFeature=2)" />
+      <Custom Action="UnregisterClientShellExtension64" After="UnregisterClientShellExtension" Condition="(REMOVE=&quot;ALL&quot;) AND (&amp;ClientFeature=2) AND VersionNT64" />
+    </InstallExecuteSequence>
+
+  </Package>
+</Wix>

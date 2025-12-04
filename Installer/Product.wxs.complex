@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  
+  <?define ProductVersion="1.0.0.0" ?>
+  <?define ProductName="File Monitor System" ?>
+  <?define Manufacturer="Your Company" ?>
+  <?define UpgradeCode="{12345678-1234-1234-1234-123456789012}" ?>
+
+  <Package 
+    Name="$(var.ProductName)" 
+    Version="$(var.ProductVersion)" 
+    Manufacturer="$(var.Manufacturer)"
+    UpgradeCode="$(var.UpgradeCode)"
+    Language="1049"
+    Codepage="1251">
+
+    <SummaryInformation 
+      Description="Система мониторинга использования файлов на Windows Server"
+      Manufacturer="$(var.Manufacturer)"
+      Keywords="File Monitor, SMB, Windows Service" />
+
+    <!-- Scope установки для всех пользователей уже установлен в Package -->
+    
+    <!-- Upgrade логика -->
+    <MajorUpgrade 
+      DowngradeErrorMessage="Более новая версия уже установлена."
+      Schedule="afterInstallInitialize" />
+
+    <!-- Медиа -->
+    <Media Id="1" Cabinet="FileMonitor.cab" EmbedCab="yes" />
+
+    <!-- Свойства для выбора компонентов -->
+    <Property Id="INSTALL_SERVER" Value="0" />
+    <Property Id="INSTALL_CLIENT" Value="0" />
+    
+    <!-- Свойства для настройки сервера -->
+    <Property Id="SERVER_ADDRESS" Value="localhost" />
+    <Property Id="SERVER_PORT" Value="5000" />
+    
+    <!-- Директории установки -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="File Monitor System">
+        <Directory Id="SERVER_DIR" Name="Service" />
+        <Directory Id="CLIENT_DIR" Name="Client" />
+      </Directory>
+    </StandardDirectory>
+
+    <!-- Ссылки на компоненты -->
+    <Feature Id="ProductFeature" Title="File Monitor System" Level="1" Display="expand">
+      
+      <Feature Id="ServerFeature" 
+               Title="Серверная служба (FileMonitorService)" 
+               Description="Windows Service для мониторинга открытых файлов на сервере. Требуется установка на файловом сервере."
+               Level="200"
+               ConfigurableDirectory="SERVER_DIR">
+        <ComponentGroupRef Id="ServerComponents" />
+        <ComponentRef Id="ServerServiceComponent" />
+        <Condition Level="1">INSTALL_SERVER="1"</Condition>
+      </Feature>
+
+      <Feature Id="ClientFeature" 
+               Title="Клиентское расширение (Shell Extension)" 
+               Description="Расширение контекстного меню Windows Explorer для просмотра пользователей файлов. Устанавливается на клиентских компьютерах."
+               Level="200"
+               ConfigurableDirectory="CLIENT_DIR">
+        <ComponentGroupRef Id="ClientComponents" />
+        <ComponentRef Id="ClientRegistrationComponent" />
+        <Condition Level="1">INSTALL_CLIENT="1"</Condition>
+      </Feature>
+      
+    </Feature>
+
+    <!-- UI последовательность -->
+    <UI>
+      <!-- Диалог приветствия -->
+      <Dialog Id="WelcomeDlg" Width="370" Height="270" Title="[ProductName] Установка">
+        <Control Id="Title" Type="Text" X="135" Y="20" Width="220" Height="60" Transparent="yes" NoPrefix="yes" Text="Добро пожаловать в мастер установки [ProductName]" />
+        <Control Id="Description" Type="Text" X="135" Y="70" Width="220" Height="80" Transparent="yes" NoPrefix="yes" Text="Эта программа установит [ProductName] на ваш компьютер. Нажмите Далее для продолжения или Отмена для выхода." />
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Далее">
+          <Publish Event="NewDialog" Value="FeaturesDlg">1</Publish>
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Отмена">
+          <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
+        </Control>
+      </Dialog>
+
+      <!-- Диалог выбора компонентов -->
+      <Dialog Id="FeaturesDlg" Width="370" Height="270" Title="[ProductName] - Выбор компонентов">
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="340" Height="15" Transparent="yes" NoPrefix="yes" Text="Выберите компоненты для установки" />
+        <Control Id="ServerCheck" Type="CheckBox" X="20" Y="40" Width="330" Height="17" Property="INSTALL_SERVER" CheckBoxValue="1" Text="Серверная служба (FileMonitorService)" />
+        <Control Id="ServerDesc" Type="Text" X="35" Y="60" Width="315" Height="30" Text="Устанавливается на файловый сервер. Мониторит открытые файлы через SMB." />
+        <Control Id="ClientCheck" Type="CheckBox" X="20" Y="100" Width="330" Height="17" Property="INSTALL_CLIENT" CheckBoxValue="1" Text="Клиентское расширение (Shell Extension)" />
+        <Control Id="ClientDesc" Type="Text" X="35" Y="120" Width="315" Height="30" Text="Устанавливается на рабочие станции. Добавляет пункт в контекстное меню." />
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Назад">
+          <Publish Event="NewDialog" Value="WelcomeDlg">1</Publish>
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Далее">
+          <Publish Event="NewDialog" Value="ServerConfigDlg">INSTALL_SERVER="1"</Publish>
+          <Publish Event="NewDialog" Value="VerifyReadyDlg">INSTALL_SERVER&lt;&gt;"1"</Publish>
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Отмена">
+          <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
+        </Control>
+      </Dialog>
+
+      <!-- Диалог настройки сервера -->
+      <Dialog Id="ServerConfigDlg" Width="370" Height="270" Title="[ProductName] - Настройка сервера">
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="340" Height="15" Transparent="yes" NoPrefix="yes" Text="Настройка серверного компонента" />
+        <Control Id="AddressLabel" Type="Text" X="20" Y="40" Width="150" Height="15" Text="Адрес сервера:" />
+        <Control Id="AddressEdit" Type="Edit" X="20" Y="55" Width="330" Height="18" Property="SERVER_ADDRESS" />
+        <Control Id="AddressDesc" Type="Text" X="20" Y="75" Width="330" Height="20" Text="Укажите адрес, на котором будет работать API (по умолчанию: localhost)" />
+        <Control Id="PortLabel" Type="Text" X="20" Y="110" Width="150" Height="15" Text="Порт сервера:" />
+        <Control Id="PortEdit" Type="Edit" X="20" Y="125" Width="100" Height="18" Property="SERVER_PORT" />
+        <Control Id="PortDesc" Type="Text" X="20" Y="145" Width="330" Height="20" Text="Укажите порт для HTTP API (по умолчанию: 5000)" />
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Назад">
+          <Publish Event="NewDialog" Value="FeaturesDlg">1</Publish>
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Далее">
+          <Publish Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Отмена">
+          <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
+        </Control>
+      </Dialog>
+
+      <!-- Диалог подтверждения -->
+      <Dialog Id="VerifyReadyDlg" Width="370" Height="270" Title="[ProductName] - Готов к установке">
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="340" Height="15" Transparent="yes" NoPrefix="yes" Text="Готов к установке" />
+        <Control Id="Description" Type="Text" X="20" Y="40" Width="330" Height="120" Text="Мастер установки готов начать установку [ProductName]. Нажмите Установить для начала установки." />
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Назад">
+          <Publish Event="NewDialog" Value="ServerConfigDlg">INSTALL_SERVER="1"</Publish>
+          <Publish Event="NewDialog" Value="FeaturesDlg">INSTALL_SERVER&lt;&gt;"1"</Publish>
+        </Control>
+        <Control Id="Install" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Установить">
+          <Publish Event="EndDialog" Value="Return">1</Publish>
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Отмена">
+          <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
+        </Control>
+      </Dialog>
+
+      <!-- Диалог отмены -->
+      <Dialog Id="CancelDlg" Width="260" Height="85" Title="[ProductName] - Отмена установки" NoMinimize="yes">
+        <Control Id="Text" Type="Text" X="10" Y="10" Width="240" Height="30" Text="Вы уверены, что хотите отменить установку?" />
+        <Control Id="Yes" Type="PushButton" X="72" Y="57" Width="56" Height="17" Default="yes" Cancel="yes" Text="Да">
+          <Publish Event="EndDialog" Value="Exit">1</Publish>
+        </Control>
+        <Control Id="No" Type="PushButton" X="132" Y="57" Width="56" Height="17" Text="Нет">
+          <Publish Event="EndDialog" Value="Return">1</Publish>
+        </Control>
+      </Dialog>
+
+      <!-- Последовательность диалогов -->
+      <InstallUISequence>
+        <Show Dialog="WelcomeDlg" Before="ProgressDlg">NOT Installed</Show>
+      </InstallUISequence>
+    </UI>
+
+    <!-- Кастомные действия -->
+    
+    <!-- Сохранение настроек сервера в appsettings.json -->
+    <CustomAction Id="UpdateServerConfig"
+                  Directory="SERVER_DIR"
+                  ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -Command &quot;$json = Get-Content '[SERVER_DIR]appsettings.json' | ConvertFrom-Json; $json.Urls = 'http://[SERVER_ADDRESS]:[SERVER_PORT]'; $json | ConvertTo-Json -Depth 10 | Set-Content '[SERVER_DIR]appsettings.json'&quot;"
+                  Execute="deferred"
+                  Impersonate="no"
+                  Return="ignore" />
+    
+    <!-- Установка службы сервера -->
+    <CustomAction Id="InstallServerService" 
+                  Directory="SERVER_DIR" 
+                  ExeCommand="cmd.exe /c &quot;sc create FileMonitorService binPath=&quot;[SERVER_DIR]FileMonitorService.exe&quot; start=auto&quot;"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <CustomAction Id="StartServerService" 
+                  Directory="SERVER_DIR" 
+                  ExeCommand="cmd.exe /c &quot;sc start FileMonitorService&quot;"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <CustomAction Id="StopServerService" 
+                  Directory="SERVER_DIR" 
+                  ExeCommand="cmd.exe /c &quot;sc stop FileMonitorService&quot;"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <CustomAction Id="UninstallServerService" 
+                  Directory="SERVER_DIR" 
+                  ExeCommand="cmd.exe /c &quot;sc delete FileMonitorService&quot;"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <!-- Регистрация клиента -->
+    <CustomAction Id="RegisterClientShellExtension" 
+                  Directory="CLIENT_DIR" 
+                  ExeCommand="[SystemFolder]regasm.exe &quot;[CLIENT_DIR]FileMonitorClient.dll&quot; /codebase /nologo"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <CustomAction Id="RegisterClientShellExtension64" 
+                  Directory="CLIENT_DIR" 
+                  ExeCommand="[System64Folder]regasm.exe &quot;[CLIENT_DIR]FileMonitorClient.dll&quot; /codebase /nologo"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <CustomAction Id="UnregisterClientShellExtension" 
+                  Directory="CLIENT_DIR" 
+                  ExeCommand="[SystemFolder]regasm.exe &quot;[CLIENT_DIR]FileMonitorClient.dll&quot; /unregister /nologo"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <CustomAction Id="UnregisterClientShellExtension64" 
+                  Directory="CLIENT_DIR" 
+                  ExeCommand="[System64Folder]regasm.exe &quot;[CLIENT_DIR]FileMonitorClient.dll&quot; /unregister /nologo"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <CustomAction Id="RestartExplorer" 
+                  Directory="TARGETDIR" 
+                  ExeCommand="cmd.exe /c &quot;taskkill /f /im explorer.exe &amp; start explorer.exe&quot;"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <!-- Последовательность установки -->
+    <InstallExecuteSequence>
+      <!-- Сервер: остановка службы перед установкой/удалением -->
+      <Custom Action="StopServerService" Before="InstallFiles" Condition="(INSTALL_SERVER=&quot;1&quot; AND (&amp;ServerFeature=3)) OR ((REMOVE=&quot;ALL&quot;) AND (&amp;ServerFeature=2))" />
+      
+      <!-- Сервер: обновление конфигурации -->
+      <Custom Action="UpdateServerConfig" After="InstallFiles" Condition="(NOT REMOVE) AND (INSTALL_SERVER=&quot;1&quot;) AND (&amp;ServerFeature=3)" />
+      
+      <!-- Сервер: установка -->
+      <Custom Action="InstallServerService" After="UpdateServerConfig" Condition="(NOT REMOVE) AND (INSTALL_SERVER=&quot;1&quot;) AND (&amp;ServerFeature=3)" />
+      <Custom Action="StartServerService" After="InstallServerService" Condition="(NOT REMOVE) AND (INSTALL_SERVER=&quot;1&quot;) AND (&amp;ServerFeature=3)" />
+      
+      <!-- Сервер: удаление -->
+      <Custom Action="UninstallServerService" Before="RemoveFiles" Condition="(REMOVE=&quot;ALL&quot;) AND (&amp;ServerFeature=2)" />
+
+      <!-- Клиент: установка -->
+      <Custom Action="RegisterClientShellExtension" After="InstallFiles" Condition="(NOT REMOVE) AND (INSTALL_CLIENT=&quot;1&quot;) AND (&amp;ClientFeature=3)" />
+      <Custom Action="RegisterClientShellExtension64" After="RegisterClientShellExtension" Condition="(NOT REMOVE) AND (INSTALL_CLIENT=&quot;1&quot;) AND (&amp;ClientFeature=3) AND VersionNT64" />
+      <Custom Action="RestartExplorer" After="RegisterClientShellExtension64" Condition="(NOT REMOVE) AND (INSTALL_CLIENT=&quot;1&quot;) AND (&amp;ClientFeature=3)" />
+
+      <!-- Клиент: удаление -->
+      <Custom Action="UnregisterClientShellExtension" Before="RemoveFiles" Condition="(REMOVE=&quot;ALL&quot;) AND (&amp;ClientFeature=2)" />
+      <Custom Action="UnregisterClientShellExtension64" After="UnregisterClientShellExtension" Condition="(REMOVE=&quot;ALL&quot;) AND (&amp;ClientFeature=2) AND VersionNT64" />
+    </InstallExecuteSequence>
+
+  </Package>
+</Wix>

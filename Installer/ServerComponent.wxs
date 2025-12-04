@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Fragment>
+    
+    <!-- Компоненты серверной части -->
+    <ComponentGroup Id="ServerComponents" Directory="SERVER_DIR">
+      
+      <!-- Основной исполняемый файл -->
+      <Component Id="ServerExeComponent" Guid="{11111111-1111-1111-1111-111111111111}">
+        <File Id="ServerExeFile" 
+              Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\FileMonitorService.exe" 
+              KeyPath="yes" />
+      </Component>
+
+      <!-- DLL зависимости -->
+      <Component Id="ServerDllComponent" Guid="{22222222-2222-2222-2222-222222222222}">
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\FileMonitorService.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\FileMonitorService.deps.json" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\FileMonitorService.runtimeconfig.json" />
+      </Component>
+
+      <!-- Конфигурация -->
+      <Component Id="ServerConfigComponent" Guid="{33333333-3333-3333-3333-333333333333}">
+        <File Id="AppSettingsFile" 
+              Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\appsettings.json" 
+              KeyPath="yes" />
+      </Component>
+
+      <!-- Все остальные DLL файлы -->
+      <Component Id="ServerFilesComponent" Guid="{44444444-4444-4444-4444-444444444444}">
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\Microsoft.ApplicationInsights.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\Microsoft.AspNetCore.OpenApi.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\Microsoft.Extensions.Hosting.WindowsServices.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\Microsoft.OpenApi.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\Microsoft.Win32.Registry.AccessControl.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\Newtonsoft.Json.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\Serilog.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\Serilog.Extensions.Hosting.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\Serilog.Extensions.Logging.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\Serilog.Sinks.Console.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\Serilog.Sinks.File.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\Swashbuckle.AspNetCore.Swagger.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\Swashbuckle.AspNetCore.SwaggerGen.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\Swashbuckle.AspNetCore.SwaggerUI.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\System.CodeDom.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\System.Configuration.ConfigurationManager.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\System.DirectoryServices.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\System.Management.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\System.Security.Cryptography.ProtectedData.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\System.Security.Permissions.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\System.ServiceProcess.ServiceController.dll" />
+        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\publish\System.Windows.Extensions.dll" KeyPath="yes" />
+      </Component>
+
+    </ComponentGroup>
+
+    <!-- Компонент для регистрации службы -->
+    <DirectoryRef Id="SERVER_DIR">
+      <Component Id="ServerServiceComponent" Guid="{55555555-5555-5555-5555-555555555555}">
+        <CreateFolder />
+        
+        <!-- Создание папки для логов -->
+        <CreateFolder Directory="ServerLogsDir" />
+        
+        <!-- Регистрация в реестре для удобства -->
+        <RegistryKey Root="HKLM" Key="SOFTWARE\FileMonitorSystem">
+          <RegistryValue Type="string" Name="ServerPath" Value="[SERVER_DIR]" KeyPath="yes" />
+        </RegistryKey>
+      </Component>
+    </DirectoryRef>
+
+    <!-- Директория для логов -->
+    <DirectoryRef Id="SERVER_DIR">
+      <Directory Id="ServerLogsDir" Name="logs" />
+    </DirectoryRef>
+
+  </Fragment>
+</Wix>

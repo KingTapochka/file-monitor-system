@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Fragment>
+    
+    <!-- Компоненты клиентской части -->
+    <ComponentGroup Id="ClientComponents" Directory="CLIENT_DIR">
+      
+      <!-- Основная DLL Shell Extension -->
+      <Component Id="ClientDllComponent" Guid="{66666666-6666-6666-6666-666666666666}">
+        <File Id="ClientDllFile" 
+              Source="..\FileMonitorClient\bin\Release\net48\FileMonitorClient.dll" 
+              KeyPath="yes" />
+      </Component>
+
+      <!-- Зависимости клиента -->
+      <Component Id="ClientDependenciesComponent" Guid="{77777777-7777-7777-7777-777777777777}">
+        <File Source="..\FileMonitorClient\bin\Release\net48\SharpShell.dll" />
+        <File Source="..\FileMonitorClient\bin\Release\net48\Newtonsoft.Json.dll" KeyPath="yes" />
+      </Component>
+
+      <!-- Конфигурация клиента -->
+      <Component Id="ClientConfigComponent" Guid="{88888888-8888-8888-8888-888888888888}">
+        <File Id="ClientConfigFile" 
+              Source="..\FileMonitorClient\bin\Release\net48\FileMonitorClient.dll.config" 
+              KeyPath="yes" />
+      </Component>
+
+    </ComponentGroup>
+
+    <!-- Компонент для регистрации клиента -->
+    <DirectoryRef Id="CLIENT_DIR">
+      <Component Id="ClientRegistrationComponent" Guid="{99999999-9999-9999-9999-999999999999}">
+        <CreateFolder />
+        
+        <!-- Регистрация в реестре -->
+        <RegistryKey Root="HKLM" Key="SOFTWARE\FileMonitorSystem">
+          <RegistryValue Type="string" Name="ClientPath" Value="[CLIENT_DIR]" KeyPath="yes" />
+        </RegistryKey>
+      </Component>
+    </DirectoryRef>
+
+  </Fragment>
+</Wix>
