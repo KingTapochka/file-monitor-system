@@ -65,8 +65,6 @@ namespace FileMonitorApp.Views
             NoUsersPanel.Visibility = Visibility.Collapsed;
             ErrorPanel.Visibility = Visibility.Collapsed;
             
-            UserCountText.Text = "";
-            LastUpdateText.Text = "";
             RefreshButton.IsEnabled = false;
         }
 
@@ -79,8 +77,6 @@ namespace FileMonitorApp.Views
             
             UsersDataGrid.ItemsSource = users;
             
-            UserCountText.Text = $"Пользователей: {users.Count}";
-            LastUpdateText.Text = $"Обновлено: {DateTime.Now:HH:mm:ss}";
             RefreshButton.IsEnabled = true;
         }
 
@@ -91,8 +87,6 @@ namespace FileMonitorApp.Views
             NoUsersPanel.Visibility = Visibility.Visible;
             ErrorPanel.Visibility = Visibility.Collapsed;
             
-            UserCountText.Text = "Пользователей: 0";
-            LastUpdateText.Text = $"Проверено: {DateTime.Now:HH:mm:ss}";
             RefreshButton.IsEnabled = true;
         }
 
@@ -105,8 +99,6 @@ namespace FileMonitorApp.Views
             
             ErrorMessage.Text = message;
             
-            UserCountText.Text = "";
-            LastUpdateText.Text = "";
             RefreshButton.IsEnabled = true;
         }
 

@@ -80,7 +80,6 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Заголовок -->
@@ -174,34 +173,9 @@
                            Margin="0,5,0,0"/>
             </StackPanel>
         </Grid>
-        
-        <!-- Статус бар -->
-        <Border Grid.Row="3" 
-                Background="White" 
-                BorderBrush="#DDD" 
-                BorderThickness="1"
-                CornerRadius="4"
-                Padding="12,8"
-                Margin="0,15,0,0">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock x:Name="UserCountText"
-                           Grid.Column="0"
-                           HorizontalAlignment="Left"
-                           FontSize="12"
-                           Foreground="#666"/>
-                <TextBlock x:Name="LastUpdateText"
-                           Grid.Column="1"
-                           FontSize="12"
-                           Foreground="#999"/>
-            </Grid>
-        </Border>
 
         <!-- Кнопки -->
-        <StackPanel Grid.Row="4" 
+        <StackPanel Grid.Row="3" 
                     Orientation="Horizontal" 
                     HorizontalAlignment="Right" 
                     Margin="0,15,0,0">
