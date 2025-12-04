@@ -12,6 +12,7 @@ public class FileMonitorCache : IFileMonitorCache
 {
     private readonly IMemoryCache _cache;
     private readonly ILogger<FileMonitorCache> _logger;
+    private readonly IPathMappingService _pathMapping;
     private readonly TimeSpan _cacheExpiration;
     private const string CACHE_KEY = "open_files";
     private readonly object _lock = new();
@@ -19,10 +20,12 @@ public class FileMonitorCache : IFileMonitorCache
     public FileMonitorCache(
         IMemoryCache cache, 
         ILogger<FileMonitorCache> logger,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IPathMappingService pathMapping)
     {
         _cache = cache;
         _logger = logger;
+        _pathMapping = pathMapping;
         
         // Чтение времени жизни кэша из конфигурации
         var expirationMinutes = configuration.GetValue<int>("FileMonitor:CacheExpirationMinutes", 5);
@@ -47,15 +50,27 @@ public class FileMonitorCache : IFileMonitorCache
     {
         var openFiles = GetCachedFiles();
         if (openFiles == null || openFiles.Count == 0)
+        {
+            _logger.LogDebug("Кэш пуст");
             return null;
+        }
 
-        var normalizedPath = NormalizePath(filePath);
+        _logger.LogInformation("Поиск файла: {FilePath}, в кэше {Count} файлов", filePath, openFiles.Count);
+        
+        // Используем PathMappingService для сравнения путей (UNC vs Local)
         var users = openFiles
-            .Where(f => NormalizePath(f.FilePath).Equals(normalizedPath, StringComparison.OrdinalIgnoreCase))
+            .Where(f => _pathMapping.PathsMatch(f.FilePath, filePath))
             .ToList();
 
+        _logger.LogInformation("Найдено {Count} пользователей для файла {FilePath}", users.Count, filePath);
+        
         if (users.Count == 0)
+        {
+            // Логируем пути в кэше для диагностики
+            var cachedPaths = openFiles.Select(f => f.FilePath).Distinct().Take(10);
+            _logger.LogDebug("Первые 10 путей в кэше: {Paths}", string.Join("; ", cachedPaths));
             return null;
+        }
 
         return new FileUsersResponse
         {

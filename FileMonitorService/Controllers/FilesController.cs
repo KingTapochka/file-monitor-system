@@ -14,15 +14,18 @@ public class FilesController : ControllerBase
     private readonly ILogger<FilesController> _logger;
     private readonly IFileMonitorCache _cache;
     private readonly ISmbFileMonitor _smbMonitor;
+    private readonly IPathMappingService _pathMapping;
 
     public FilesController(
         ILogger<FilesController> logger,
         IFileMonitorCache cache,
-        ISmbFileMonitor smbMonitor)
+        ISmbFileMonitor smbMonitor,
+        IPathMappingService pathMapping)
     {
         _logger = logger;
         _cache = cache;
         _smbMonitor = smbMonitor;
+        _pathMapping = pathMapping;
     }
 
     /// <summary>
@@ -138,6 +141,52 @@ public class FilesController : ControllerBase
             status = "healthy",
             service = "FileMonitorService",
             timestamp = DateTime.Now
+        });
+    }
+
+    /// <summary>
+    /// Диагностика: показать содержимое кэша и маппинги
+    /// </summary>
+    [HttpGet("debug")]
+    [ProducesResponseType(200)]
+    public ActionResult Debug()
+    {
+        var activeFiles = _cache.GetActiveFiles();
+        
+        return Ok(new
+        {
+            server = Environment.MachineName,
+            timestamp = DateTime.Now,
+            cachedFilesCount = activeFiles.Count,
+            cachedFiles = activeFiles.Take(50).Select(f => new
+            {
+                f.FilePath,
+                f.UserCount,
+                uncPath = _pathMapping.LocalToUnc(f.FilePath)
+            }),
+            message = "Используйте /api/files/users?filePath=<путь> для поиска"
+        });
+    }
+
+    /// <summary>
+    /// Диагностика: преобразование пути
+    /// </summary>
+    [HttpGet("convert-path")]
+    [ProducesResponseType(200)]
+    public ActionResult ConvertPath([FromQuery] string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return BadRequest("Укажите путь в параметре path");
+        }
+
+        return Ok(new
+        {
+            original = path,
+            variants = _pathMapping.GetAllPathVariants(path),
+            isUnc = path.StartsWith(@"\\"),
+            toLocal = _pathMapping.UncToLocal(path),
+            toUnc = _pathMapping.LocalToUnc(path)
         });
     }
 }

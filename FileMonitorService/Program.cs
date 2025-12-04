@@ -4,11 +4,18 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
+// Получаем путь к папке, где находится exe-файл (для single-file используем AppContext.BaseDirectory)
+var exeDirectory = AppContext.BaseDirectory;
+var logPath = Path.Combine(exeDirectory, "logs", "service-.txt");
+
+// Создаём папку для логов, если не существует
+Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
+
 // Настройка Serilog
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .WriteTo.Console()
-    .WriteTo.File("logs/service-.txt", rollingInterval: RollingInterval.Day)
+    .WriteTo.File(logPath, rollingInterval: RollingInterval.Day)
     .CreateLogger();
 
 try
@@ -35,6 +42,7 @@ try
 
     // Регистрация сервисов
     builder.Services.AddMemoryCache();
+    builder.Services.AddSingleton<IPathMappingService, PathMappingService>();
     builder.Services.AddSingleton<ISmbFileMonitor, SmbFileMonitor>();
     builder.Services.AddSingleton<IFileMonitorCache, FileMonitorCache>();
     
@@ -61,7 +69,8 @@ try
         app.UseSwaggerUI();
     }
 
-    app.UseHttpsRedirection();
+    // Не используем HTTPS редирект для HTTP API
+    // app.UseHttpsRedirection();
     app.UseAuthorization();
     app.MapControllers();
 

@@ -2,75 +2,46 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Fragment>
     
-    <!-- Компоненты серверной части -->
+    <!-- Компоненты серверной части (Single-file deployment) -->
     <ComponentGroup Id="ServerComponents" Directory="SERVER_DIR">
       
-      <!-- Основной исполняемый файл -->
+      <!-- Основной исполняемый файл с установкой службы -->
       <Component Id="ServerExeComponent" Guid="{11111111-1111-1111-1111-111111111111}" Bitness="always64">
         <File Id="ServerExeFile" 
-              Source="..\FileMonitorService\bin\Release\net8.0-windows\FileMonitorService.exe" 
+              Source="..\FileMonitorService\bin\Release\publish\FileMonitorService.exe" 
               KeyPath="yes" />
-      </Component>
-
-      <!-- DLL и конфиг -->
-      <Component Id="ServerDllComponent" Guid="{22222222-2222-2222-2222-222222222222}" Bitness="always64">
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\FileMonitorService.dll" KeyPath="yes" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\FileMonitorService.deps.json" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\FileMonitorService.runtimeconfig.json" />
+        
+        <!-- Установка Windows Service -->
+        <ServiceInstall
+          Id="FileMonitorServiceInstall"
+          Name="FileMonitorService"
+          DisplayName="File Monitor Service"
+          Description="Служба мониторинга использования файлов на файловом сервере. Порт 5000."
+          Start="auto"
+          Type="ownProcess"
+          ErrorControl="ignore"
+          Account="LocalSystem" />
+        
+        <!-- Управление службой: запуск после установки, остановка и удаление при деинсталляции -->
+        <ServiceControl
+          Id="FileMonitorServiceControl"
+          Name="FileMonitorService"
+          Start="install"
+          Stop="both"
+          Remove="uninstall"
+          Wait="no" />
       </Component>
 
       <!-- Конфигурация appsettings.json -->
       <Component Id="ServerConfigComponent" Guid="{33333333-3333-3333-3333-333333333333}" Bitness="always64">
         <File Id="AppSettingsFile" 
-              Source="..\FileMonitorService\bin\Release\net8.0-windows\appsettings.json" 
+              Source="..\FileMonitorService\bin\Release\publish\appsettings.json" 
               KeyPath="yes" />
-      </Component>
-
-      <!-- Зависимости Microsoft -->
-      <Component Id="ServerMicrosoftDllsComponent" Guid="{44444444-4444-4444-4444-444444444441}" Bitness="always64">
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\Microsoft.ApplicationInsights.dll" KeyPath="yes" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\Microsoft.AspNetCore.OpenApi.dll" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\Microsoft.Extensions.Hosting.WindowsServices.dll" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\Microsoft.OpenApi.dll" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\Microsoft.Win32.Registry.AccessControl.dll" />
-      </Component>
-
-      <!-- Serilog -->
-      <Component Id="ServerSerilogDllsComponent" Guid="{44444444-4444-4444-4444-444444444442}" Bitness="always64">
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\Serilog.dll" KeyPath="yes" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\Serilog.Extensions.Hosting.dll" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\Serilog.Extensions.Logging.dll" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\Serilog.Sinks.Console.dll" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\Serilog.Sinks.File.dll" />
-      </Component>
-
-      <!-- Swagger -->
-      <Component Id="ServerSwaggerDllsComponent" Guid="{44444444-4444-4444-4444-444444444443}" Bitness="always64">
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\Swashbuckle.AspNetCore.Swagger.dll" KeyPath="yes" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\Swashbuckle.AspNetCore.SwaggerGen.dll" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\Swashbuckle.AspNetCore.SwaggerUI.dll" />
-      </Component>
-
-      <!-- System DLLs -->
-      <Component Id="ServerSystemDllsComponent" Guid="{44444444-4444-4444-4444-444444444444}" Bitness="always64">
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\System.CodeDom.dll" KeyPath="yes" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\System.Configuration.ConfigurationManager.dll" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\System.DirectoryServices.dll" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\System.Management.dll" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\System.Security.Cryptography.ProtectedData.dll" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\System.Security.Permissions.dll" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\System.ServiceProcess.ServiceController.dll" />
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\System.Windows.Extensions.dll" />
-      </Component>
-
-      <!-- Newtonsoft.Json -->
-      <Component Id="ServerNewtonsoftComponent" Guid="{44444444-4444-4444-4444-444444444445}" Bitness="always64">
-        <File Source="..\FileMonitorService\bin\Release\net8.0-windows\Newtonsoft.Json.dll" KeyPath="yes" />
       </Component>
 
     </ComponentGroup>
 
-    <!-- Компонент для регистрации службы -->
+    <!-- Компонент для создания папок и реестра -->
     <DirectoryRef Id="SERVER_DIR">
       <Component Id="ServerServiceComponent" Guid="{55555555-5555-5555-5555-555555555555}" Bitness="always64">
         <CreateFolder />
@@ -81,7 +52,7 @@
         <!-- Регистрация в реестре -->
         <RegistryKey Root="HKLM" Key="SOFTWARE\FileMonitorSystem">
           <RegistryValue Type="string" Name="ServerPath" Value="[SERVER_DIR]" KeyPath="yes" />
-          <RegistryValue Type="string" Name="Version" Value="2.0.0" />
+          <RegistryValue Type="string" Name="Version" Value="2.2.0" />
         </RegistryKey>
       </Component>
     </DirectoryRef>

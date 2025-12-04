@@ -7,6 +7,10 @@
     <UserSecretsId>dotnet-FileMonitorService-e9a7c3d8-8a4f-4e1f-9b2e-5c6d7e8f9a0b</UserSecretsId>
     <OutputType>exe</OutputType>
     <LangVersion>latest</LangVersion>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,7 +22,6 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
-    <PackageReference Include="System.Management.Automation" Version="7.4.0" />
   </ItemGroup>
 
 </Project>

@@ -128,10 +128,8 @@
                       CellStyle="{StaticResource CellStyle}"
                       Visibility="Collapsed">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Пользователь" Binding="{Binding UserName}" Width="*" MinWidth="120"/>
-                    <DataGridTextColumn Header="Компьютер" Binding="{Binding ClientComputerName}" Width="*" MinWidth="120"/>
-                    <DataGridTextColumn Header="Режим доступа" Binding="{Binding AccessMode}" Width="120"/>
-                    <DataGridTextColumn Header="Время открытия" Binding="{Binding OpenTime, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" Width="140"/>
+                    <DataGridTextColumn Header="Пользователь" Binding="{Binding UserName}" Width="*" MinWidth="150"/>
+                    <DataGridTextColumn Header="Компьютер" Binding="{Binding ClientName}" Width="*" MinWidth="150"/>
                 </DataGrid.Columns>
             </DataGrid>
             
@@ -187,22 +185,16 @@
                 Margin="0,15,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="StatusText"
-                           Grid.Column="0"
-                           Text="Готов"
-                           FontSize="12"
-                           Foreground="#666"/>
                 <TextBlock x:Name="UserCountText"
-                           Grid.Column="1"
-                           HorizontalAlignment="Center"
+                           Grid.Column="0"
+                           HorizontalAlignment="Left"
                            FontSize="12"
                            Foreground="#666"/>
                 <TextBlock x:Name="LastUpdateText"
-                           Grid.Column="2"
+                           Grid.Column="1"
                            FontSize="12"
                            Foreground="#999"/>
             </Grid>

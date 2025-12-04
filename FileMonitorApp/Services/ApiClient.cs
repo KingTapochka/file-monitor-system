@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
@@ -23,7 +24,15 @@ namespace FileMonitorApp.Services
         public ApiClient(string serverAddress)
         {
             _baseUrl = serverAddress.TrimEnd('/');
-            _httpClient = new HttpClient
+            
+            // Создаём handler который обходит прокси для локальных адресов
+            var handler = new HttpClientHandler
+            {
+                UseProxy = false, // Отключаем прокси для прямого подключения к серверу
+                Proxy = null
+            };
+            
+            _httpClient = new HttpClient(handler)
             {
                 Timeout = TimeSpan.FromSeconds(10)
             };

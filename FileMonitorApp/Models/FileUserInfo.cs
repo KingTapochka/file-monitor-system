@@ -17,8 +17,8 @@ namespace FileMonitorApp.Models
         /// <summary>
         /// Имя компьютера клиента
         /// </summary>
-        [JsonProperty("clientComputerName")]
-        public string ClientComputerName { get; set; } = string.Empty;
+        [JsonProperty("clientName")]
+        public string ClientName { get; set; } = string.Empty;
 
         /// <summary>
         /// Режим доступа (Read, Write, Read/Write)

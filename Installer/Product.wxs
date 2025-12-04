@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   
-  <?define ProductVersion="2.1.0.0" ?>
+  <?define ProductVersion="2.2.0.0" ?>
   <?define ProductName="File Monitor System" ?>
   <?define Manufacturer="File Monitor" ?>
   <?define UpgradeCode="{12345678-1234-1234-1234-123456789012}" ?>
@@ -22,8 +23,6 @@
       Keywords="File Monitor, SMB, Windows Service" />
 
     <!-- ===== АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ ===== -->
-    <!-- MajorUpgrade автоматически находит предыдущие версии по UpgradeCode и заменяет их -->
-    <!-- При обновлении: 1) Останавливается старая версия 2) Удаляются старые файлы 3) Устанавливаются новые -->
     <MajorUpgrade 
       AllowDowngrades="no"
       AllowSameVersionUpgrades="yes"
@@ -33,9 +32,20 @@
     <!-- Медиа -->
     <Media Id="1" Cabinet="FileMonitor.cab" EmbedCab="yes" CompressionLevel="high" />
 
-    <!-- Свойства для настройки сервера -->
-    <Property Id="SERVER_ADDRESS" Value="localhost" />
-    <Property Id="SERVER_PORT" Value="5000" />
+    <!-- UI для выбора компонентов -->
+    <ui:WixUI Id="WixUI_FeatureTree" />
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+
+    <!-- Custom Action: Запуск клиента после установки -->
+    <CustomAction Id="LaunchClientApp" 
+                  FileRef="ClientExeFile" 
+                  ExeCommand="" 
+                  Impersonate="yes" 
+                  Return="asyncNoWait" />
+    
+    <InstallExecuteSequence>
+      <Custom Action="LaunchClientApp" After="InstallFinalize" Condition="(&amp;ClientFeature=3) AND NOT REMOVE" />
+    </InstallExecuteSequence>
     
     <!-- Директории установки -->
     <StandardDirectory Id="ProgramFiles64Folder">
@@ -46,87 +56,35 @@
     </StandardDirectory>
 
     <!-- Ссылки на компоненты -->
-    <Feature Id="ProductFeature" Title="File Monitor System" Level="1" Display="expand">
+    <Feature Id="ProductFeature" Title="File Monitor System" Level="1" Display="expand" 
+             Description="Выберите компоненты для установки">
       
       <Feature Id="ServerFeature" 
-               Title="Серверная служба (FileMonitorService)" 
-               Description="Windows Service для мониторинга открытых файлов на сервере. Устанавливайте на файловый сервер."
-               Level="1"
+               Title="Серверная служба" 
+               Description="Windows Service для мониторинга открытых файлов. Устанавливайте ТОЛЬКО на файловый сервер!"
+               Level="1000"
+               AllowAbsent="yes"
+               AllowAdvertise="no"
                ConfigurableDirectory="SERVER_DIR">
         <ComponentGroupRef Id="ServerComponents" />
         <ComponentRef Id="ServerServiceComponent" />
       </Feature>
 
       <Feature Id="ClientFeature" 
-               Title="Клиентское приложение (File Monitor App)" 
-               Description="Приложение для проверки использования файлов. Работает из системного трея, поддерживает горячие клавиши Win+Shift+F."
+               Title="Клиентское приложение" 
+               Description="Приложение для проверки кто открыл файл. Устанавливайте на рабочие станции пользователей."
                Level="1"
+               AllowAbsent="yes"
+               AllowAdvertise="no"
                ConfigurableDirectory="CLIENT_DIR">
         <ComponentGroupRef Id="ClientComponents" />
         <ComponentRef Id="ClientRegistrationComponent" />
+        <ComponentRef Id="ClientAutoStartComponent" />
         <ComponentRef Id="StartMenuShortcutComponent" />
         <ComponentRef Id="DesktopShortcutComponent" />
       </Feature>
       
     </Feature>
-
-    <!-- Кастомные действия для службы -->
-    
-    <!-- Остановка службы (перед обновлением или удалением) -->
-    <CustomAction Id="StopServerService" 
-                  Directory="SERVER_DIR" 
-                  ExeCommand="cmd.exe /c &quot;sc stop FileMonitorService 2>nul&quot;"
-                  Execute="deferred" 
-                  Impersonate="no" 
-                  Return="ignore" />
-
-    <!-- Пауза для корректной остановки службы -->
-    <CustomAction Id="WaitForServiceStop" 
-                  Directory="SERVER_DIR" 
-                  ExeCommand="cmd.exe /c &quot;timeout /t 3 /nobreak >nul&quot;"
-                  Execute="deferred" 
-                  Impersonate="no" 
-                  Return="ignore" />
-
-    <!-- Установка службы (только при первой установке) -->
-    <CustomAction Id="InstallServerService" 
-                  Directory="SERVER_DIR" 
-                  ExeCommand="cmd.exe /c &quot;sc query FileMonitorService >nul 2>&amp;1 || sc create FileMonitorService binPath=\&quot;[SERVER_DIR]FileMonitorService.exe\&quot; start=auto DisplayName=\&quot;File Monitor Service\&quot;&quot;"
-                  Execute="deferred" 
-                  Impersonate="no" 
-                  Return="ignore" />
-
-    <!-- Запуск службы -->
-    <CustomAction Id="StartServerService" 
-                  Directory="SERVER_DIR" 
-                  ExeCommand="cmd.exe /c &quot;sc start FileMonitorService&quot;"
-                  Execute="deferred" 
-                  Impersonate="no" 
-                  Return="ignore" />
-
-    <!-- Удаление службы (только при полном удалении) -->
-    <CustomAction Id="UninstallServerService" 
-                  Directory="SERVER_DIR" 
-                  ExeCommand="cmd.exe /c &quot;sc delete FileMonitorService 2>nul&quot;"
-                  Execute="deferred" 
-                  Impersonate="no" 
-                  Return="ignore" />
-
-    <!-- Последовательность установки -->
-    <InstallExecuteSequence>
-      <!-- Остановка службы: при обновлении, переустановке или удалении -->
-      <Custom Action="StopServerService" Before="InstallFiles" Condition="(&amp;ServerFeature=3) OR (&amp;ServerFeature=2) OR (REINSTALL)" />
-      <Custom Action="WaitForServiceStop" After="StopServerService" Condition="(&amp;ServerFeature=3) OR (&amp;ServerFeature=2) OR (REINSTALL)" />
-      
-      <!-- Установка службы (если ещё не существует) -->
-      <Custom Action="InstallServerService" After="InstallFiles" Condition="(&amp;ServerFeature=3) AND (NOT REMOVE=&quot;ALL&quot;)" />
-      
-      <!-- Запуск службы после установки или обновления -->
-      <Custom Action="StartServerService" After="InstallServerService" Condition="(&amp;ServerFeature=3) AND (NOT REMOVE=&quot;ALL&quot;)" />
-      
-      <!-- Удаление службы только при полном удалении -->
-      <Custom Action="UninstallServerService" Before="RemoveFiles" Condition="(REMOVE=&quot;ALL&quot;) AND (NOT UPGRADINGPRODUCTCODE)" />
-    </InstallExecuteSequence>
 
   </Package>
 </Wix>

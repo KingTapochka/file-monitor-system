@@ -73,6 +73,15 @@
       </Component>
     </DirectoryRef>
 
+    <!-- Автозапуск клиента при входе пользователя -->
+    <DirectoryRef Id="CLIENT_DIR">
+      <Component Id="ClientAutoStartComponent" Guid="{CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC}" Bitness="always64">
+        <RegistryKey Root="HKCU" Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Run">
+          <RegistryValue Type="string" Name="FileMonitor" Value="[CLIENT_DIR]FileMonitorApp.exe" KeyPath="yes" />
+        </RegistryKey>
+      </Component>
+    </DirectoryRef>
+
     <!-- Ярлык в меню Пуск -->
     <StandardDirectory Id="ProgramMenuFolder">
       <Directory Id="ProgramMenuDir" Name="File Monitor">
