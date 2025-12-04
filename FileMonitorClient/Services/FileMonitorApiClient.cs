@@ -1,4 +1,5 @@
 using System;
+using System.Configuration;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
@@ -15,8 +16,14 @@ namespace FileMonitorClient.Services
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
 
-        public FileMonitorApiClient(string baseUrl = "http://localhost:5000")
+        public FileMonitorApiClient(string? baseUrl = null)
         {
+            // Читаем адрес из конфига, если не передан явно
+            if (string.IsNullOrEmpty(baseUrl))
+            {
+                baseUrl = ConfigurationManager.AppSettings["ServerAddress"] ?? "http://localhost:5000";
+            }
+            
             _baseUrl = baseUrl.TrimEnd('/');
             _httpClient = new HttpClient
             {
