@@ -93,41 +93,11 @@
                   Impersonate="no" 
                   Return="ignore" />
 
-    <!-- Регистрация клиента -->
-    <CustomAction Id="RegisterClientShellExtension" 
-                  Directory="CLIENT_DIR" 
-                  ExeCommand="[SystemFolder]regasm.exe &quot;[CLIENT_DIR]FileMonitorClient.dll&quot; /codebase /nologo"
-                  Execute="deferred" 
-                  Impersonate="no" 
-                  Return="ignore" />
+    <!-- ПРИМЕЧАНИЕ: Регистрация Shell Extension УДАЛЕНА из MSI -->
+    <!-- Причина: regasm НЕ работает правильно для SharpShell COM объектов -->
+    <!-- ПОСЛЕ установки запустите: .\Scripts\Register-ShellExtension.ps1 -->
 
-    <CustomAction Id="RegisterClientShellExtension64" 
-                  Directory="CLIENT_DIR" 
-                  ExeCommand="[System64Folder]regasm.exe &quot;[CLIENT_DIR]FileMonitorClient.dll&quot; /codebase /nologo"
-                  Execute="deferred" 
-                  Impersonate="no" 
-                  Return="ignore" />
-
-    <CustomAction Id="UnregisterClientShellExtension" 
-                  Directory="CLIENT_DIR" 
-                  ExeCommand="[SystemFolder]regasm.exe &quot;[CLIENT_DIR]FileMonitorClient.dll&quot; /unregister /nologo"
-                  Execute="deferred" 
-                  Impersonate="no" 
-                  Return="ignore" />
-
-    <CustomAction Id="UnregisterClientShellExtension64" 
-                  Directory="CLIENT_DIR" 
-                  ExeCommand="[System64Folder]regasm.exe &quot;[CLIENT_DIR]FileMonitorClient.dll&quot; /unregister /nologo"
-                  Execute="deferred" 
-                  Impersonate="no" 
-                  Return="ignore" />
-
-    <CustomAction Id="RestartExplorer" 
-                  Directory="TARGETDIR" 
-                  ExeCommand="cmd.exe /c &quot;taskkill /f /im explorer.exe &amp; start explorer.exe&quot;"
-                  Execute="deferred" 
-                  Impersonate="no" 
-                  Return="ignore" />
+    <!-- УДАЛЕНО: RestartExplorer ломает систему - пользователь должен перезагрузиться вручную -->
 
     <!-- Последовательность установки -->
     <InstallExecuteSequence>
@@ -141,14 +111,7 @@
       <!-- Сервер: удаление -->
       <Custom Action="UninstallServerService" Before="RemoveFiles" Condition="(REMOVE=&quot;ALL&quot;) AND (&amp;ServerFeature=2)" />
 
-      <!-- Клиент: установка -->
-      <Custom Action="RegisterClientShellExtension" After="InstallFiles" Condition="(NOT REMOVE) AND (&amp;ClientFeature=3)" />
-      <Custom Action="RegisterClientShellExtension64" After="RegisterClientShellExtension" Condition="(NOT REMOVE) AND (&amp;ClientFeature=3) AND VersionNT64" />
-      <Custom Action="RestartExplorer" After="RegisterClientShellExtension64" Condition="(NOT REMOVE) AND (&amp;ClientFeature=3)" />
-
-      <!-- Клиент: удаление -->
-      <Custom Action="UnregisterClientShellExtension" Before="RemoveFiles" Condition="(REMOVE=&quot;ALL&quot;) AND (&amp;ClientFeature=2)" />
-      <Custom Action="UnregisterClientShellExtension64" After="UnregisterClientShellExtension" Condition="(REMOVE=&quot;ALL&quot;) AND (&amp;ClientFeature=2) AND VersionNT64" />
+      <!-- Клиент: регистрация удалена - пользователь запускает скрипт вручную -->
     </InstallExecuteSequence>
 
   </Package>

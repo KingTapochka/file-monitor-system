@@ -8,6 +8,8 @@
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <PlatformTarget>x64</PlatformTarget>
+    <SignAssembly>false</SignAssembly>
+    <DelaySign>false</DelaySign>
   </PropertyGroup>
 
   <ItemGroup>
