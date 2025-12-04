@@ -1,5 +1,6 @@
 using FileMonitorService;
 using FileMonitorService.Services;
+using FileMonitorService.Middleware;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -63,11 +64,18 @@ try
     var app = builder.Build();
 
     // Настройка HTTP pipeline
+    
+    // Swagger только в Development режиме
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
         app.UseSwaggerUI();
     }
+
+    // Middleware безопасности (порядок важен!)
+    app.UseIpFiltering();        // 1. Фильтр по IP
+    app.UseRateLimiting();       // 2. Rate limiting
+    app.UseApiKeyAuthentication(); // 3. API ключ
 
     // Не используем HTTPS редирект для HTTP API
     // app.UseHttpsRedirection();

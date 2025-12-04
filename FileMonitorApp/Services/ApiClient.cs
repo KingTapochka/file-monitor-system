@@ -16,14 +16,16 @@ namespace FileMonitorApp.Services
     {
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
+        private readonly string? _apiKey;
 
-        public ApiClient() : this(ConfigManager.ServerAddress)
+        public ApiClient() : this(ConfigManager.ServerAddress, ConfigManager.ApiKey)
         {
         }
 
-        public ApiClient(string serverAddress)
+        public ApiClient(string serverAddress, string? apiKey = null)
         {
             _baseUrl = serverAddress.TrimEnd('/');
+            _apiKey = apiKey;
             
             // Создаём handler который обходит прокси для локальных адресов
             var handler = new HttpClientHandler
@@ -36,6 +38,12 @@ namespace FileMonitorApp.Services
             {
                 Timeout = TimeSpan.FromSeconds(10)
             };
+
+            // Добавляем API ключ если он указан
+            if (!string.IsNullOrEmpty(_apiKey))
+            {
+                _httpClient.DefaultRequestHeaders.Add("X-API-Key", _apiKey);
+            }
         }
 
         /// <summary>

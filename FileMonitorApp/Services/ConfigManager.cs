@@ -58,6 +58,16 @@ namespace FileMonitorApp.Services
             }
         }
 
+        public static string ApiKey
+        {
+            get => Settings.ApiKey;
+            set
+            {
+                Settings.ApiKey = value;
+                SaveSettings();
+            }
+        }
+
         private static void LoadSettings()
         {
             try
@@ -133,6 +143,7 @@ namespace FileMonitorApp.Services
             public string ServerAddress { get; set; } = "http://localhost:5000";
             public string HotKey { get; set; } = "Win+Shift+F";
             public bool AutoStart { get; set; } = false;
+            public string ApiKey { get; set; } = "";
         }
     }
 }

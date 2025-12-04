@@ -15,6 +15,7 @@ namespace FileMonitorApp.Views
         private void LoadSettings()
         {
             ServerAddressTextBox.Text = ConfigManager.ServerAddress;
+            ApiKeyTextBox.Text = ConfigManager.ApiKey;
         }
 
         private async void TestConnectionButton_Click(object sender, RoutedEventArgs e)
@@ -48,7 +49,7 @@ namespace FileMonitorApp.Views
             
             try
             {
-                using var client = new ApiClient(serverAddress);
+                using var client = new ApiClient(serverAddress, ApiKeyTextBox.Text.Trim());
                 var (success, message) = await client.CheckHealthAsync();
                 
                 ShowConnectionStatus(success, message);
@@ -150,6 +151,7 @@ namespace FileMonitorApp.Views
             {
                 // Сохраняем через ConfigManager (в папку пользователя)
                 ConfigManager.ServerAddress = serverAddress;
+                ConfigManager.ApiKey = ApiKeyTextBox.Text.Trim();
                 
                 MessageBox.Show("Настройки сохранены", "Успех", 
                     MessageBoxButton.OK, MessageBoxImage.Information);

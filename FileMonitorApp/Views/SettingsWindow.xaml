@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="File Monitor - Настройки" 
-        Height="280" 
+        Height="350" 
         Width="450"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
@@ -82,6 +82,23 @@
                             Click="TestConnectionButton_Click"/>
                 </Grid>
                 <TextBlock Text="Пример: http://server-name:5000" 
+                           FontSize="11" 
+                           Foreground="#999"
+                           Margin="0,5,0,0"/>
+            </StackPanel>
+
+            <!-- API ключ -->
+            <StackPanel Margin="0,0,0,15">
+                <TextBlock Text="API ключ (опционально):" 
+                           FontSize="13" 
+                           Foreground="#666"
+                           Margin="0,0,0,5"/>
+                <TextBox x:Name="ApiKeyTextBox" 
+                         Padding="10,8"
+                         FontSize="13"
+                         BorderBrush="#CCC"
+                         BorderThickness="1"/>
+                <TextBlock Text="Оставьте пустым если сервер не требует ключ" 
                            FontSize="11" 
                            Foreground="#999"
                            Margin="0,5,0,0"/>
