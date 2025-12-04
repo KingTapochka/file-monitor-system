@@ -2,42 +2,108 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Fragment>
     
-    <!-- Компоненты клиентской части -->
+    <!-- Компоненты клиентской части (FileMonitorApp) -->
     <ComponentGroup Id="ClientComponents" Directory="CLIENT_DIR">
       
-      <!-- Основная DLL Shell Extension -->
-      <Component Id="ClientDllComponent" Guid="{66666666-6666-6666-6666-666666666666}">
-        <File Id="ClientDllFile" 
-              Source="..\FileMonitorClient\bin\Release\net48\FileMonitorClient.dll" 
+      <!-- Основной EXE файл -->
+      <Component Id="ClientExeComponent" Guid="{66666666-6666-6666-6666-666666666661}" Bitness="always64">
+        <File Id="ClientExeFile" 
+              Source="..\FileMonitorApp\bin\Release\net8.0-windows\win-x64\FileMonitorApp.exe" 
               KeyPath="yes" />
       </Component>
 
-      <!-- Зависимости клиента -->
-      <Component Id="ClientDependenciesComponent" Guid="{77777777-7777-7777-7777-777777777777}">
-        <File Source="..\FileMonitorClient\bin\Release\net48\SharpShell.dll" />
-        <File Source="..\FileMonitorClient\bin\Release\net48\Newtonsoft.Json.dll" KeyPath="yes" />
+      <!-- DLL файлы -->
+      <Component Id="ClientDllComponent" Guid="{66666666-6666-6666-6666-666666666662}" Bitness="always64">
+        <File Source="..\FileMonitorApp\bin\Release\net8.0-windows\win-x64\FileMonitorApp.dll" KeyPath="yes" />
       </Component>
 
-      <!-- Конфигурация клиента -->
-      <Component Id="ClientConfigComponent" Guid="{88888888-8888-8888-8888-888888888888}">
+      <!-- Runtime config -->
+      <Component Id="ClientRuntimeConfigComponent" Guid="{66666666-6666-6666-6666-666666666663}" Bitness="always64">
+        <File Source="..\FileMonitorApp\bin\Release\net8.0-windows\win-x64\FileMonitorApp.runtimeconfig.json" KeyPath="yes" />
+      </Component>
+
+      <!-- Зависимости -->
+      <Component Id="ClientDepsComponent" Guid="{66666666-6666-6666-6666-666666666664}" Bitness="always64">
+        <File Source="..\FileMonitorApp\bin\Release\net8.0-windows\win-x64\FileMonitorApp.deps.json" KeyPath="yes" />
+      </Component>
+
+      <!-- Конфигурация -->
+      <Component Id="ClientConfigComponent" Guid="{88888888-8888-8888-8888-888888888888}" Bitness="always64">
         <File Id="ClientConfigFile" 
-              Source="..\FileMonitorClient\bin\Release\net48\FileMonitorClient.dll.config" 
+              Source="..\FileMonitorApp\bin\Release\net8.0-windows\win-x64\FileMonitorApp.dll.config" 
               KeyPath="yes" />
+      </Component>
+
+      <!-- Hardcodet.NotifyIcon.Wpf -->
+      <Component Id="HardcodedNotifyIconComponent" Guid="{66666666-6666-6666-6666-666666666665}" Bitness="always64">
+        <File Source="..\FileMonitorApp\bin\Release\net8.0-windows\win-x64\Hardcodet.NotifyIcon.Wpf.dll" KeyPath="yes" />
+      </Component>
+
+      <!-- NHotkey -->
+      <Component Id="NHotkeyComponent" Guid="{66666666-6666-6666-6666-666666666666}" Bitness="always64">
+        <File Source="..\FileMonitorApp\bin\Release\net8.0-windows\win-x64\NHotkey.dll" KeyPath="yes" />
+      </Component>
+
+      <Component Id="NHotkeyWpfComponent" Guid="{66666666-6666-6666-6666-666666666667}" Bitness="always64">
+        <File Source="..\FileMonitorApp\bin\Release\net8.0-windows\win-x64\NHotkey.Wpf.dll" KeyPath="yes" />
+      </Component>
+
+      <!-- Newtonsoft.Json -->
+      <Component Id="NewtonsoftJsonComponent" Guid="{66666666-6666-6666-6666-666666666668}" Bitness="always64">
+        <File Source="..\FileMonitorApp\bin\Release\net8.0-windows\win-x64\Newtonsoft.Json.dll" KeyPath="yes" />
+      </Component>
+
+      <!-- Иконка приложения -->
+      <Component Id="AppIconComponent" Guid="{66666666-6666-6666-6666-666666666669}" Bitness="always64">
+        <File Id="AppIconFile" Source="..\FileMonitorApp\app.ico" KeyPath="yes" />
       </Component>
 
     </ComponentGroup>
 
-    <!-- Компонент для регистрации клиента -->
+    <!-- Компонент регистрации и SendTo -->
     <DirectoryRef Id="CLIENT_DIR">
-      <Component Id="ClientRegistrationComponent" Guid="{99999999-9999-9999-9999-999999999999}">
+      <Component Id="ClientRegistrationComponent" Guid="{99999999-9999-9999-9999-999999999999}" Bitness="always64">
         <CreateFolder />
         
         <!-- Регистрация в реестре -->
         <RegistryKey Root="HKLM" Key="SOFTWARE\FileMonitorSystem">
           <RegistryValue Type="string" Name="ClientPath" Value="[CLIENT_DIR]" KeyPath="yes" />
+          <RegistryValue Type="string" Name="Version" Value="2.0.0" />
         </RegistryKey>
       </Component>
     </DirectoryRef>
+
+    <!-- Ярлык в меню Пуск -->
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ProgramMenuDir" Name="File Monitor">
+        <Component Id="StartMenuShortcutComponent" Guid="{AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA}">
+          <Shortcut Id="StartMenuShortcut"
+                    Name="File Monitor"
+                    Description="Проверка использования файлов"
+                    Target="[CLIENT_DIR]FileMonitorApp.exe"
+                    WorkingDirectory="CLIENT_DIR"
+                    Icon="AppIcon.ico" />
+          <RemoveFolder Id="RemoveProgramMenuDir" On="uninstall" />
+          <RegistryValue Root="HKCU" Key="Software\FileMonitorSystem" Name="StartMenuInstalled" Type="integer" Value="1" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
+    <!-- Ярлык на рабочем столе -->
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DesktopShortcutComponent" Guid="{BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB}">
+        <Shortcut Id="DesktopShortcut"
+                  Name="File Monitor"
+                  Description="Проверка использования файлов"
+                  Target="[CLIENT_DIR]FileMonitorApp.exe"
+                  WorkingDirectory="CLIENT_DIR"
+                  Icon="AppIcon.ico" />
+        <RegistryValue Root="HKCU" Key="Software\FileMonitorSystem" Name="DesktopInstalled" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <!-- Определение иконки для ярлыков -->
+    <Icon Id="AppIcon.ico" SourceFile="..\FileMonitorApp\app.ico" />
 
   </Fragment>
 </Wix>

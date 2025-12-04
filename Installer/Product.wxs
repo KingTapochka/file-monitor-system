@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   
-  <?define ProductVersion="1.0.0.0" ?>
+  <?define ProductVersion="2.1.0.0" ?>
   <?define ProductName="File Monitor System" ?>
-  <?define Manufacturer="Your Company" ?>
+  <?define Manufacturer="File Monitor" ?>
   <?define UpgradeCode="{12345678-1234-1234-1234-123456789012}" ?>
 
   <Package 
@@ -12,20 +12,26 @@
     Manufacturer="$(var.Manufacturer)"
     UpgradeCode="$(var.UpgradeCode)"
     Language="1049"
-    Codepage="1251">
+    Codepage="1251"
+    InstallerVersion="500"
+    Scope="perMachine">
 
     <SummaryInformation 
       Description="Система мониторинга использования файлов на Windows Server"
       Manufacturer="$(var.Manufacturer)"
       Keywords="File Monitor, SMB, Windows Service" />
 
-    <!-- Upgrade логика -->
+    <!-- ===== АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ ===== -->
+    <!-- MajorUpgrade автоматически находит предыдущие версии по UpgradeCode и заменяет их -->
+    <!-- При обновлении: 1) Останавливается старая версия 2) Удаляются старые файлы 3) Устанавливаются новые -->
     <MajorUpgrade 
-      DowngradeErrorMessage="Более новая версия уже установлена."
-      Schedule="afterInstallInitialize" />
+      AllowDowngrades="no"
+      AllowSameVersionUpgrades="yes"
+      DowngradeErrorMessage="Более новая версия [ProductName] уже установлена. Сначала удалите её."
+      Schedule="afterInstallValidate" />
 
     <!-- Медиа -->
-    <Media Id="1" Cabinet="FileMonitor.cab" EmbedCab="yes" />
+    <Media Id="1" Cabinet="FileMonitor.cab" EmbedCab="yes" CompressionLevel="high" />
 
     <!-- Свойства для настройки сервера -->
     <Property Id="SERVER_ADDRESS" Value="localhost" />
@@ -44,7 +50,7 @@
       
       <Feature Id="ServerFeature" 
                Title="Серверная служба (FileMonitorService)" 
-               Description="Windows Service для мониторинга открытых файлов на сервере."
+               Description="Windows Service для мониторинга открытых файлов на сервере. Устанавливайте на файловый сервер."
                Level="1"
                ConfigurableDirectory="SERVER_DIR">
         <ComponentGroupRef Id="ServerComponents" />
@@ -52,26 +58,45 @@
       </Feature>
 
       <Feature Id="ClientFeature" 
-               Title="Клиентское расширение (Shell Extension)" 
-               Description="Расширение контекстного меню Windows Explorer."
+               Title="Клиентское приложение (File Monitor App)" 
+               Description="Приложение для проверки использования файлов. Работает из системного трея, поддерживает горячие клавиши Win+Shift+F."
                Level="1"
                ConfigurableDirectory="CLIENT_DIR">
         <ComponentGroupRef Id="ClientComponents" />
         <ComponentRef Id="ClientRegistrationComponent" />
+        <ComponentRef Id="StartMenuShortcutComponent" />
+        <ComponentRef Id="DesktopShortcutComponent" />
       </Feature>
       
     </Feature>
 
-    <!-- Кастомные действия -->
+    <!-- Кастомные действия для службы -->
     
-    <!-- Установка службы сервера -->
-    <CustomAction Id="InstallServerService" 
+    <!-- Остановка службы (перед обновлением или удалением) -->
+    <CustomAction Id="StopServerService" 
                   Directory="SERVER_DIR" 
-                  ExeCommand="cmd.exe /c &quot;sc create FileMonitorService binPath=&quot;[SERVER_DIR]FileMonitorService.exe&quot; start=auto&quot;"
+                  ExeCommand="cmd.exe /c &quot;sc stop FileMonitorService 2>nul&quot;"
                   Execute="deferred" 
                   Impersonate="no" 
                   Return="ignore" />
 
+    <!-- Пауза для корректной остановки службы -->
+    <CustomAction Id="WaitForServiceStop" 
+                  Directory="SERVER_DIR" 
+                  ExeCommand="cmd.exe /c &quot;timeout /t 3 /nobreak >nul&quot;"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <!-- Установка службы (только при первой установке) -->
+    <CustomAction Id="InstallServerService" 
+                  Directory="SERVER_DIR" 
+                  ExeCommand="cmd.exe /c &quot;sc query FileMonitorService >nul 2>&amp;1 || sc create FileMonitorService binPath=\&quot;[SERVER_DIR]FileMonitorService.exe\&quot; start=auto DisplayName=\&quot;File Monitor Service\&quot;&quot;"
+                  Execute="deferred" 
+                  Impersonate="no" 
+                  Return="ignore" />
+
+    <!-- Запуск службы -->
     <CustomAction Id="StartServerService" 
                   Directory="SERVER_DIR" 
                   ExeCommand="cmd.exe /c &quot;sc start FileMonitorService&quot;"
@@ -79,39 +104,28 @@
                   Impersonate="no" 
                   Return="ignore" />
 
-    <CustomAction Id="StopServerService" 
-                  Directory="SERVER_DIR" 
-                  ExeCommand="cmd.exe /c &quot;sc stop FileMonitorService&quot;"
-                  Execute="deferred" 
-                  Impersonate="no" 
-                  Return="ignore" />
-
+    <!-- Удаление службы (только при полном удалении) -->
     <CustomAction Id="UninstallServerService" 
                   Directory="SERVER_DIR" 
-                  ExeCommand="cmd.exe /c &quot;sc delete FileMonitorService&quot;"
+                  ExeCommand="cmd.exe /c &quot;sc delete FileMonitorService 2>nul&quot;"
                   Execute="deferred" 
                   Impersonate="no" 
                   Return="ignore" />
-
-    <!-- ПРИМЕЧАНИЕ: Регистрация Shell Extension УДАЛЕНА из MSI -->
-    <!-- Причина: regasm НЕ работает правильно для SharpShell COM объектов -->
-    <!-- ПОСЛЕ установки запустите: .\Scripts\Register-ShellExtension.ps1 -->
-
-    <!-- УДАЛЕНО: RestartExplorer ломает систему - пользователь должен перезагрузиться вручную -->
 
     <!-- Последовательность установки -->
     <InstallExecuteSequence>
-      <!-- Сервер: остановка службы перед установкой/удалением -->
-      <Custom Action="StopServerService" Before="InstallFiles" Condition="(&amp;ServerFeature=3) OR ((REMOVE=&quot;ALL&quot;) AND (&amp;ServerFeature=2))" />
+      <!-- Остановка службы: при обновлении, переустановке или удалении -->
+      <Custom Action="StopServerService" Before="InstallFiles" Condition="(&amp;ServerFeature=3) OR (&amp;ServerFeature=2) OR (REINSTALL)" />
+      <Custom Action="WaitForServiceStop" After="StopServerService" Condition="(&amp;ServerFeature=3) OR (&amp;ServerFeature=2) OR (REINSTALL)" />
       
-      <!-- Сервер: установка -->
-      <Custom Action="InstallServerService" After="InstallFiles" Condition="(NOT REMOVE) AND (&amp;ServerFeature=3)" />
-      <Custom Action="StartServerService" After="InstallServerService" Condition="(NOT REMOVE) AND (&amp;ServerFeature=3)" />
+      <!-- Установка службы (если ещё не существует) -->
+      <Custom Action="InstallServerService" After="InstallFiles" Condition="(&amp;ServerFeature=3) AND (NOT REMOVE=&quot;ALL&quot;)" />
       
-      <!-- Сервер: удаление -->
-      <Custom Action="UninstallServerService" Before="RemoveFiles" Condition="(REMOVE=&quot;ALL&quot;) AND (&amp;ServerFeature=2)" />
-
-      <!-- Клиент: регистрация удалена - пользователь запускает скрипт вручную -->
+      <!-- Запуск службы после установки или обновления -->
+      <Custom Action="StartServerService" After="InstallServerService" Condition="(&amp;ServerFeature=3) AND (NOT REMOVE=&quot;ALL&quot;)" />
+      
+      <!-- Удаление службы только при полном удалении -->
+      <Custom Action="UninstallServerService" Before="RemoveFiles" Condition="(REMOVE=&quot;ALL&quot;) AND (NOT UPGRADINGPRODUCTCODE)" />
     </InstallExecuteSequence>
 
   </Package>

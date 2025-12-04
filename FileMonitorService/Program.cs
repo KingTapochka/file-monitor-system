@@ -17,6 +17,16 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
 
+    // Чтение порта из конфигурации
+    var port = builder.Configuration.GetValue<int>("ServerSettings:Port", 5000);
+    
+    // Настройка Kestrel для прослушивания всех интерфейсов
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ListenAnyIP(port);
+        Log.Information($"Сервер будет слушать на порту {port} (все интерфейсы)");
+    });
+
     // Настройка Serilog
     builder.Host.UseSerilog();
 

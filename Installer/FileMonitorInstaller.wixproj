@@ -2,16 +2,19 @@
   <PropertyGroup>
     <OutputName>FileMonitorSetup</OutputName>
     <OutputType>Package</OutputType>
-    <WixTargetsPath Condition="'$(WixTargetsPath)' == ''">$(MSBuildExtensionsPath)\WiX Toolset\v4\wix.targets</WixTargetsPath>
+    <InstallerPlatform>x64</InstallerPlatform>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="WixToolset.UI.wixext" Version="4.0.4" />
   </ItemGroup>
 
+  <!-- WIX SDK автоматически включает все .wxs файлы, поэтому явно указывать их не нужно -->
+  
+  <!-- Исключаем backup и другие файлы -->
   <ItemGroup>
-    <Compile Include="Product.wxs" />
-    <Compile Include="ServerComponent.wxs" />
-    <Compile Include="ClientComponent.wxs" />
+    <None Remove="Product.wxs.backup" />
+    <None Remove="Product.wxs.complex" />
+    <None Remove="Product.wxs.working" />
   </ItemGroup>
 </Project>
