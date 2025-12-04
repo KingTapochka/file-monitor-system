@@ -31,27 +31,27 @@ catch {
 
 # Ochistka predydushchih sborok
 if ($Clean) {
-    Write-Host "`n[2/6] Ochistka predydushchih sborok..." -ForegroundColor Yellow
+    Write-Host "`n[2/5] Ochistka predydushchih sborok..." -ForegroundColor Yellow
     
     Remove-Item "$rootPath\FileMonitorService\bin" -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item "$rootPath\FileMonitorService\obj" -Recurse -Force -ErrorAction SilentlyContinue
-    Remove-Item "$rootPath\FileMonitorClient\bin" -Recurse -Force -ErrorAction SilentlyContinue
-    Remove-Item "$rootPath\FileMonitorClient\obj" -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item "$rootPath\FileMonitorApp\bin" -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item "$rootPath\FileMonitorApp\obj" -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item "$rootPath\Installer\bin" -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item "$rootPath\Installer\obj" -Recurse -Force -ErrorAction SilentlyContinue
     
     Write-Host "  [OK] Ochistka zavershena" -ForegroundColor Green
 }
 else {
-    Write-Host "`n[2/6] Propusk ochistki (ispolzuyte -Clean dlya ochistki)" -ForegroundColor Yellow
+    Write-Host "`n[2/5] Propusk ochistki (ispolzuyte -Clean dlya ochistki)" -ForegroundColor Yellow
 }
 
-# Sborka servernoy chasti
-Write-Host "`n[3/6] Sborka FileMonitorService..." -ForegroundColor Yellow
+# Sborka servernoy chasti (single-file self-contained)
+Write-Host "`n[3/5] Sborka FileMonitorService..." -ForegroundColor Yellow
 Push-Location "$rootPath\FileMonitorService"
 try {
     dotnet restore
-    dotnet publish -c Release --self-contained false -o "bin\Release\net8.0-windows\publish"
+    dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true -o "bin\Release\publish"
     
     if ($LASTEXITCODE -ne 0) {
         throw "Oshibka pri sborke FileMonitorService"
@@ -63,39 +63,25 @@ finally {
     Pop-Location
 }
 
-# Sborka klientskoy chasti
-Write-Host "`n[4/6] Sborka FileMonitorClient..." -ForegroundColor Yellow
-Push-Location "$rootPath\FileMonitorClient"
+# Sborka klientskoy chasti (FileMonitorApp)
+Write-Host "`n[4/5] Sborka FileMonitorApp..." -ForegroundColor Yellow
+Push-Location "$rootPath\FileMonitorApp"
 try {
     dotnet restore
-    dotnet build -c Release
+    dotnet build -c Release -r win-x64
     
     if ($LASTEXITCODE -ne 0) {
-        throw "Oshibka pri sborke FileMonitorClient"
+        throw "Oshibka pri sborke FileMonitorApp"
     }
     
-    Write-Host "  [OK] FileMonitorClient sobran" -ForegroundColor Green
+    Write-Host "  [OK] FileMonitorApp sobran" -ForegroundColor Green
 }
 finally {
     Pop-Location
 }
 
-# Sozdanie konfiguracionnogo fayla dlya klienta (esli ne suschestvuet)
-$clientConfigPath = "$rootPath\FileMonitorClient\bin\Release\net48\FileMonitorClient.dll.config"
-if (-not (Test-Path $clientConfigPath)) {
-    Write-Host "`n  Sozdanie konfiguracionnogo fayla klienta..." -ForegroundColor Cyan
-    @"
-<?xml version="1.0" encoding="utf-8"?>
-<configuration>
-  <appSettings>
-    <add key="ApiBaseUrl" value="http://localhost:5000" />
-  </appSettings>
-</configuration>
-"@ | Out-File -FilePath $clientConfigPath -Encoding UTF8
-}
-
 # Sborka ustanovschika
-Write-Host "`n[5/6] Sborka MSI ustanovschika..." -ForegroundColor Yellow
+Write-Host "`n[5/5] Sborka MSI ustanovschika..." -ForegroundColor Yellow
 Push-Location "$rootPath\Installer"
 try {
     # Sborka cherez wix CLI s bazovym UI
@@ -116,7 +102,7 @@ finally {
 }
 
 # Poisk rezultata
-Write-Host "`n[6/6] Poisk rezultata..." -ForegroundColor Yellow
+Write-Host "`n Poisk rezultata..." -ForegroundColor Yellow
 
 $msiPaths = @(
     "$rootPath\Installer\bin\Release\FileMonitorSetup.msi",
