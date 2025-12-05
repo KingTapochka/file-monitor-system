@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
@@ -86,6 +87,31 @@ namespace FileMonitorApp.Services
                 window.Show();
                 window.Activate();
             });
+        }
+
+        public void CheckFolder(string folderPath)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                var window = new FolderUsersWindow(folderPath);
+                window.Show();
+                window.Activate();
+            });
+        }
+
+        /// <summary>
+        /// Проверка файла или папки
+        /// </summary>
+        public void CheckPath(string path)
+        {
+            if (Directory.Exists(path))
+            {
+                CheckFolder(path);
+            }
+            else if (File.Exists(path))
+            {
+                CheckFile(path);
+            }
         }
 
         private void ShowCheckWindow()

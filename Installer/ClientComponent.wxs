@@ -95,6 +95,27 @@
       </Component>
     </DirectoryRef>
 
+    <!-- Контекстное меню Windows - пункт "Проверка папки" для всех папок -->
+    <DirectoryRef Id="CLIENT_DIR">
+      <Component Id="ContextMenuFolderComponent" Guid="{EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE}" Bitness="always64">
+        <RegistryKey Root="HKLM" Key="SOFTWARE\Classes\Directory\shell\FileMonitor.CheckFolder">
+          <RegistryValue Type="string" Value="Проверка папки" />
+          <RegistryValue Type="string" Name="Icon" Value="[CLIENT_DIR]FileMonitorApp.exe,0" />
+        </RegistryKey>
+        <RegistryKey Root="HKLM" Key="SOFTWARE\Classes\Directory\shell\FileMonitor.CheckFolder\command">
+          <RegistryValue Type="string" Value="&quot;[CLIENT_DIR]FileMonitorApp.exe&quot; &quot;%1&quot;" KeyPath="yes" />
+        </RegistryKey>
+        <!-- Также для фона папки (правый клик в пустом месте папки) -->
+        <RegistryKey Root="HKLM" Key="SOFTWARE\Classes\Directory\Background\shell\FileMonitor.CheckFolder">
+          <RegistryValue Type="string" Value="Проверка этой папки" />
+          <RegistryValue Type="string" Name="Icon" Value="[CLIENT_DIR]FileMonitorApp.exe,0" />
+        </RegistryKey>
+        <RegistryKey Root="HKLM" Key="SOFTWARE\Classes\Directory\Background\shell\FileMonitor.CheckFolder\command">
+          <RegistryValue Type="string" Value="&quot;[CLIENT_DIR]FileMonitorApp.exe&quot; &quot;%V&quot;" />
+        </RegistryKey>
+      </Component>
+    </DirectoryRef>
+
     <!-- Ярлык в меню Пуск -->
     <StandardDirectory Id="ProgramMenuFolder">
       <Directory Id="ProgramMenuDir" Name="File Monitor">

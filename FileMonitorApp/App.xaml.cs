@@ -41,10 +41,14 @@ namespace FileMonitorApp
             _trayManager = new TrayIconManager();
             _trayManager.Initialize();
 
-            // Если передан файл через командную строку
-            if (e.Args.Length > 0 && File.Exists(e.Args[0]))
+            // Если передан путь через командную строку (файл или папка)
+            if (e.Args.Length > 0)
             {
-                _trayManager.CheckFile(e.Args[0]);
+                var path = e.Args[0];
+                if (File.Exists(path) || Directory.Exists(path))
+                {
+                    _trayManager.CheckPath(path);
+                }
             }
 
             // Не показываем главное окно при запуске - только трей
@@ -82,11 +86,11 @@ namespace FileMonitorApp
                         await server.WaitForConnectionAsync(_pipeServerCts.Token);
                         
                         using var reader = new StreamReader(server);
-                        var filePath = await reader.ReadLineAsync();
+                        var path = await reader.ReadLineAsync();
                         
-                        if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+                        if (!string.IsNullOrEmpty(path) && (File.Exists(path) || Directory.Exists(path)))
                         {
-                            Dispatcher.Invoke(() => _trayManager?.CheckFile(filePath));
+                            Dispatcher.Invoke(() => _trayManager?.CheckPath(path));
                         }
                     }
                     catch (OperationCanceledException)
