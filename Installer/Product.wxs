@@ -2,7 +2,7 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   
-  <?define ProductVersion="2.2.0.0" ?>
+  <?define ProductVersion="2.3.0.0" ?>
   <?define ProductName="File Monitor System" ?>
   <?define Manufacturer="File Monitor" ?>
   <?define UpgradeCode="{12345678-1234-1234-1234-123456789012}" ?>
@@ -80,6 +80,7 @@
         <ComponentGroupRef Id="ClientComponents" />
         <ComponentRef Id="ClientRegistrationComponent" />
         <ComponentRef Id="ClientAutoStartComponent" />
+        <ComponentRef Id="ContextMenuComponent" />
         <ComponentRef Id="StartMenuShortcutComponent" />
         <ComponentRef Id="DesktopShortcutComponent" />
       </Feature>

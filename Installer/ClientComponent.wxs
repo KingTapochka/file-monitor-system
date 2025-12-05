@@ -82,6 +82,19 @@
       </Component>
     </DirectoryRef>
 
+    <!-- Контекстное меню Windows - пункт "Проверка файла" для всех файлов -->
+    <DirectoryRef Id="CLIENT_DIR">
+      <Component Id="ContextMenuComponent" Guid="{DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD}" Bitness="always64">
+        <RegistryKey Root="HKLM" Key="SOFTWARE\Classes\*\shell\FileMonitor.CheckFile">
+          <RegistryValue Type="string" Value="Проверка файла" />
+          <RegistryValue Type="string" Name="Icon" Value="[CLIENT_DIR]FileMonitorApp.exe,0" />
+        </RegistryKey>
+        <RegistryKey Root="HKLM" Key="SOFTWARE\Classes\*\shell\FileMonitor.CheckFile\command">
+          <RegistryValue Type="string" Value="&quot;[CLIENT_DIR]FileMonitorApp.exe&quot; &quot;%1&quot;" KeyPath="yes" />
+        </RegistryKey>
+      </Component>
+    </DirectoryRef>
+
     <!-- Ярлык в меню Пуск -->
     <StandardDirectory Id="ProgramMenuFolder">
       <Directory Id="ProgramMenuDir" Name="File Monitor">
