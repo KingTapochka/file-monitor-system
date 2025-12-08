@@ -39,6 +39,13 @@
               KeyPath="yes" />
       </Component>
 
+      <!-- Sysinternals Handle для обнаружения всех открытых файлов (включая Adobe Acrobat) -->
+      <Component Id="HandleExeComponent" Guid="{44444444-4444-4444-4444-444444444444}" Bitness="always64">
+        <File Id="HandleExeFile" 
+              Source="..\FileMonitorService\bin\Release\net8.0-windows\win-x64\handle64.exe" 
+              KeyPath="yes" />
+      </Component>
+
     </ComponentGroup>
 
     <!-- Компонент для создания папок и реестра -->
