@@ -19,6 +19,7 @@ namespace FileMonitorApp.Services
     {
         private TaskbarIcon? _trayIcon;
         private FileCheckWindow? _checkWindow;
+        private FileUsersWindow? _usersWindow; // Переиспользуемое окно результатов
 
         public void Initialize()
         {
@@ -83,9 +84,21 @@ namespace FileMonitorApp.Services
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                var window = new FileUsersWindow(filePath);
-                window.Show();
-                window.Activate();
+                // Переиспользуем одно окно вместо создания нового
+                if (_usersWindow == null || !_usersWindow.IsLoaded)
+                {
+                    _usersWindow = new FileUsersWindow(filePath);
+                    _usersWindow.Closed += (s, e) => _usersWindow = null;
+                    _usersWindow.Show();
+                }
+                else
+                {
+                    // Обновляем информацию о файле в существующем окне
+                    _usersWindow.UpdateFileInfo(filePath);
+                    _usersWindow.Show();
+                }
+                
+                _usersWindow.Activate();
             });
         }
 
