@@ -12,45 +12,7 @@ namespace FileMonitorApp.Views
         public FileCheckWindow()
         {
             InitializeComponent();
-            FilePathPanel.Visibility = Visibility.Visible;
-        }
-
-        private void DropZone_DragEnter(object sender, DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                e.Effects = DragDropEffects.Copy;
-                DropZone.BorderBrush = System.Windows.Media.Brushes.Green;
-                DropHint.Visibility = Visibility.Visible;
-                FilePathPanel.Visibility = Visibility.Collapsed;
-            }
-            else
-            {
-                e.Effects = DragDropEffects.None;
-            }
-            e.Handled = true;
-        }
-
-        private void DropZone_DragLeave(object sender, DragEventArgs e)
-        {
-            DropZone.BorderBrush = (System.Windows.Media.Brush)FindResource("PrimaryBrush");
-            DropHint.Visibility = Visibility.Collapsed;
-            FilePathPanel.Visibility = Visibility.Visible;
-        }
-
-        private void DropZone_Drop(object sender, DragEventArgs e)
-        {
-            DropZone.BorderBrush = (System.Windows.Media.Brush)FindResource("PrimaryBrush");
-            
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                var files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                if (files.Length > 0 && File.Exists(files[0]))
-                {
-                    FileSelected?.Invoke(this, files[0]);
-                    Close();
-                }
-            }
+            FilePathTextBox.Focus();
         }
 
         private void BrowseButton_Click(object sender, RoutedEventArgs e)
@@ -64,6 +26,26 @@ namespace FileMonitorApp.Views
             if (dialog.ShowDialog() == true)
             {
                 FilePathTextBox.Text = dialog.FileName;
+            }
+        }
+
+        private void TextBox_PreviewDragOver(object sender, DragEventArgs e)
+        {
+            e.Handled = true;
+            e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) 
+                ? DragDropEffects.Copy 
+                : DragDropEffects.None;
+        }
+
+        private void TextBox_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                if (files.Length > 0)
+                {
+                    FilePathTextBox.Text = files[0];
+                }
             }
         }
 

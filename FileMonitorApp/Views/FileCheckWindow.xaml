@@ -2,132 +2,152 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="File Monitor - Выбор файла" 
-        Height="280" 
-        Width="500"
+        Height="250" 
+        Width="740"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="#F5F5F5">
 
-    <Window.Resources>
-        <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background" Value="#2196F3"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="15,8"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" 
-                                CornerRadius="4"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
+    <StackPanel Margin="20">
+        <!-- Заголовок -->
+        <TextBlock Text="🔍 Проверить использование файла" 
+                   FontSize="18" 
+                   FontWeight="SemiBold"
+                   Foreground="#333"
+                   Margin="0,0,0,5"/>
+        <TextBlock Text="Укажите путь к файлу" 
+                   FontSize="12" 
+                   Foreground="#666"
+                   Margin="0,0,0,15"/>
+
+        <!-- Поле ввода и кнопка Обзор в одной строке -->
+        <DockPanel Margin="0,0,0,15" LastChildFill="True">
+            <Button DockPanel.Dock="Right"
+                    x:Name="BrowseButton"
+                    Content="Обзор"
+                Width="90"
+                Height="40"
+                Margin="10,0,0,0"
+                Background="#2196F3"
+                Foreground="White"
+                FontSize="13"
+                    BorderBrush="#1976D2"
+                    BorderThickness="2"
+                FontWeight="SemiBold"
+                Click="BrowseButton_Click">
+                <Button.Effect>
+                    <DropShadowEffect BlurRadius="5" ShadowDepth="2" Opacity="0.3"/>
+                </Button.Effect>
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            CornerRadius="4"
+                                            Padding="10,8">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="#1976D2"/>
                             </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#1565C0"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </Window.Resources>
-
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-
-        <!-- Заголовок -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,15">
-            <TextBlock Text="🔍 Проверить использование файла" 
-                       FontSize="18" 
-                       FontWeight="SemiBold"
-                       Foreground="#333"/>
-            <TextBlock Text="Перетащите файл в окно или укажите путь" 
-                       FontSize="12" 
-                       Foreground="#666"
-                       Margin="0,5,0,0"/>
-        </StackPanel>
-
-        <!-- Область Drag & Drop и ввода пути -->
-        <Border Grid.Row="1" 
-                x:Name="DropZone"
-                Background="White" 
-                BorderBrush="#2196F3" 
-                BorderThickness="2"
-                CornerRadius="8"
-                AllowDrop="True"
-                DragEnter="DropZone_DragEnter"
-                DragLeave="DropZone_DragLeave"
-                Drop="DropZone_Drop">
-            <Grid Margin="15">
-                <!-- Панель ввода пути (по умолчанию видима) -->
-                <StackPanel x:Name="FilePathPanel" VerticalAlignment="Center">
-                    <TextBlock Text="Путь к файлу:" 
-                               FontSize="12" 
-                               Foreground="#666"
-                               Margin="0,0,0,5"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBox x:Name="FilePathTextBox" 
-                                 Grid.Column="0"
-                                 Padding="10,8"
-                                 FontSize="13"
-                                 BorderBrush="#CCC"
-                                 BorderThickness="1"/>
-                        <Button Grid.Column="1" 
-                                Content="📂 Обзор" 
-                                Padding="10,8"
-                                Margin="8,0,0,0"
-                                Click="BrowseButton_Click"/>
-                    </Grid>
-                    <TextBlock Text="или перетащите файл в это окно" 
-                               FontSize="11" 
-                               Foreground="#999"
-                               HorizontalAlignment="Center"
-                               Margin="0,12,0,0"/>
-                </StackPanel>
-                
-                <!-- Подсказка при перетаскивании (скрыта по умолчанию) -->
-                <StackPanel x:Name="DropHint" 
-                            VerticalAlignment="Center" 
-                            HorizontalAlignment="Center"
-                            Visibility="Collapsed">
-                    <TextBlock Text="📁" FontSize="48" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Отпустите файл здесь" 
-                               FontSize="14" 
-                               Foreground="#2196F3"
-                               FontWeight="SemiBold"
-                               HorizontalAlignment="Center"
-                               Margin="0,10,0,0"/>
-                </StackPanel>
-            </Grid>
-        </Border>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <TextBox x:Name="FilePathTextBox"
+                 Height="40"
+                     Padding="10,10"
+                     FontSize="13"
+                     VerticalContentAlignment="Center"
+                     AllowDrop="True"
+                     PreviewDragOver="TextBox_PreviewDragOver"
+                     Drop="TextBox_Drop"
+                     BorderBrush="#BDBDBD"
+                     BorderThickness="2"/>
+        </DockPanel>
 
         <!-- Кнопки -->
-        <StackPanel Grid.Row="2" 
-                    Orientation="Horizontal" 
-                    HorizontalAlignment="Right" 
-                    Margin="0,15,0,0">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,5">
             <Button Content="✓ Проверить" 
-                    Style="{StaticResource PrimaryButton}"
-                    Width="120"
-                    Click="CheckButton_Click"/>
+                Width="140"
+                Height="40"
+                Background="#2196F3"
+                Foreground="White"
+                FontSize="13"
+                BorderBrush="#1976D2"
+                BorderThickness="2"
+                FontWeight="SemiBold"
+                Click="CheckButton_Click">
+                <Button.Effect>
+                    <DropShadowEffect BlurRadius="5" ShadowDepth="2" Opacity="0.3"/>
+                </Button.Effect>
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            CornerRadius="4"
+                                            Padding="10,8">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1976D2"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
             <Button Content="Отмена" 
-                    Width="100" 
-                    Margin="10,0,0,0"
-                    Padding="15,8"
-                    Click="CancelButton_Click"/>
+                Width="110"
+                Height="40"
+                Margin="10,0,0,0"
+                Background="#FFFFFF"
+                Foreground="#333"
+                BorderBrush="#BDBDBD"
+                BorderThickness="2"
+                FontSize="13"
+                FontWeight="SemiBold"
+                Click="CancelButton_Click">
+                <Button.Effect>
+                    <DropShadowEffect BlurRadius="5" ShadowDepth="2" Opacity="0.2"/>
+                </Button.Effect>
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            CornerRadius="4"
+                                            Padding="10,8">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#F0F0F0"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
         </StackPanel>
-    </Grid>
+    </StackPanel>
 </Window>

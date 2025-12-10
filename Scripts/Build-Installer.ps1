@@ -57,6 +57,25 @@ try {
         throw "Oshibka pri sborke FileMonitorService"
     }
     
+    # Garantiruem nalichie handle64.exe dlya servernogo komponenta
+    $handlePath = "bin\Release\net8.0-windows\win-x64\handle64.exe"
+    if (-not (Test-Path $handlePath)) {
+        Write-Host "  Zagruzka handle64.exe (Sysinternals)..." -ForegroundColor Gray
+        $tempZip = Join-Path $env:TEMP "Handle.zip"
+        $tempDir = Join-Path $env:TEMP "handle"
+        Remove-Item $tempZip -Force -ErrorAction SilentlyContinue
+        Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+        Invoke-WebRequest -Uri "https://download.sysinternals.com/files/Handle.zip" -OutFile $tempZip -UseBasicParsing
+        Expand-Archive -Path $tempZip -DestinationPath $tempDir -Force
+        $downloaded = Join-Path $tempDir "handle64.exe"
+        if (-not (Test-Path $downloaded)) {
+            $downloaded = Join-Path $tempDir "handle.exe"
+        }
+        Copy-Item $downloaded -Destination $handlePath -Force
+        Remove-Item $tempZip -Force -ErrorAction SilentlyContinue
+        Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
     Write-Host "  [OK] FileMonitorService sobran" -ForegroundColor Green
 }
 finally {
@@ -68,10 +87,16 @@ Write-Host "`n[4/5] Sborka FileMonitorApp..." -ForegroundColor Yellow
 Push-Location "$rootPath\FileMonitorApp"
 try {
     dotnet restore
-    dotnet build -c Release -r win-x64
+    dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true -o "bin\Release\publish"
     
     if ($LASTEXITCODE -ne 0) {
         throw "Oshibka pri sborke FileMonitorApp"
+    }
+
+    $appConfigSource = Join-Path $PWD "App.config"
+    $appConfigTarget = "bin\Release\publish\FileMonitorApp.dll.config"
+    if (Test-Path $appConfigSource) {
+        Copy-Item $appConfigSource $appConfigTarget -Force
     }
     
     Write-Host "  [OK] FileMonitorApp sobran" -ForegroundColor Green
@@ -89,6 +114,7 @@ try {
     
     & $wixPath build Product.wxs ServerComponent.wxs ClientComponent.wxs `
         -arch x64 `
+        -ext WixToolset.UI.wixext `
         -out "FileMonitorSetup.msi"
         
     if ($LASTEXITCODE -ne 0) {

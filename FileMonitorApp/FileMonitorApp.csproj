@@ -10,18 +10,19 @@
     <RootNamespace>FileMonitorApp</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>false</SelfContained>
+    <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <Version>2.1.0</Version>
     <Company>File Monitor</Company>
     <Product>File Monitor Client</Product>
     <Description>Клиент для мониторинга использования файлов</Description>
-    <ApplicationIcon>app.ico</ApplicationIcon>
+    <ApplicationIcon>app-dark-v2.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <Resource Include="app.ico" />
+    <Resource Include="app-dark-v2.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,6 +35,7 @@
   <ItemGroup>
     <None Update="App.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
   </ItemGroup>
 

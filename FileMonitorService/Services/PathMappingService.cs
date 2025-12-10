@@ -62,7 +62,8 @@ public class PathMappingService : IPathMappingService
         }
         
         // Имя сервера (если не указано - получаем автоматически)
-        _serverName = configuration["ServerSettings:ServerName"] ?? Environment.MachineName;
+        var configServerName = configuration["ServerSettings:ServerName"];
+        _serverName = string.IsNullOrWhiteSpace(configServerName) ? Environment.MachineName : configServerName;
         _logger.LogInformation("Имя сервера: {ServerName}", _serverName);
         
         // Автоматическое обнаружение шар через SMB
@@ -235,8 +236,74 @@ public class PathMappingService : IPathMappingService
         var variants1 = GetAllPathVariants(path1);
         var variants2 = GetAllPathVariants(path2);
 
-        return variants1.Any(v1 => variants2.Any(v2 => 
-            v1.Equals(v2, StringComparison.OrdinalIgnoreCase)));
+        if (variants1.Any(v1 => variants2.Any(v2 => 
+            v1.Equals(v2, StringComparison.OrdinalIgnoreCase))))
+            return true;
+            
+        // Дополнительная проверка: сравниваем относительные пути после имени шары/диска
+        // Это поможет когда маппинг шар не загружен
+        var relativePath1 = GetRelativePath(path1);
+        var relativePath2 = GetRelativePath(path2);
+        
+        if (!string.IsNullOrEmpty(relativePath1) && !string.IsNullOrEmpty(relativePath2))
+        {
+            if (relativePath1.Equals(relativePath2, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogDebug("Пути совпали по относительному пути: {Path1} == {Path2}", path1, path2);
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /// <summary>
+    /// Получает относительный путь после корня (шары или диска)
+    /// \\server\share\folder\file.pdf -> folder\file.pdf
+    /// C:\share\folder\file.pdf -> folder\file.pdf (если share - это шара)
+    /// </summary>
+    private string GetRelativePath(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return "";
+        
+        var normalized = NormalizePath(path);
+        
+        // UNC путь: \\server\share\rest\of\path
+        if (normalized.StartsWith(@"\\"))
+        {
+            var parts = normalized.Substring(2).Split('\\');
+            if (parts.Length > 2)
+            {
+                // Возвращаем путь после \\server\share
+                return string.Join("\\", parts.Skip(2));
+            }
+            return "";
+        }
+        
+        // Локальный путь: C:\folder\rest\of\path
+        if (normalized.Length >= 3 && normalized[1] == ':')
+        {
+            // Ищем, не является ли первая папка шарой
+            var pathWithoutDrive = normalized.Substring(3); // убираем C:\
+            var firstSlash = pathWithoutDrive.IndexOf('\\');
+            
+            if (firstSlash > 0)
+            {
+                var firstFolder = pathWithoutDrive.Substring(0, firstSlash);
+                
+                // Проверяем, есть ли шара с таким именем
+                if (_shareMappings.Any(m => m.ShareName == firstFolder))
+                {
+                    // Возвращаем путь после первой папки
+                    return pathWithoutDrive.Substring(firstSlash + 1);
+                }
+            }
+            
+            // Просто возвращаем путь без диска
+            return pathWithoutDrive;
+        }
+        
+        return normalized;
     }
 
     private string NormalizePath(string path)

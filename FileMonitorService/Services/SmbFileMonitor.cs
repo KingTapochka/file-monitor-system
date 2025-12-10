@@ -59,7 +59,7 @@ public class SmbFileMonitor : ISmbFileMonitor
 
             var openFiles = new List<FileUserInfo>();
 
-            // 1. Получаем файлы через SMB (сетевые подключения)
+            // 1. Получаем файлы через SMB (сетевые подключения) - основной метод
             var smbFiles = await GetSmbOpenFilesAsync();
             openFiles.AddRange(smbFiles);
 
@@ -67,14 +67,11 @@ public class SmbFileMonitor : ISmbFileMonitor
             var localFiles = await GetLocalOpenFilesAsync();
             AddUniqueFiles(openFiles, localFiles);
             
-            // 3. Получаем файлы через Handle.exe (Sysinternals) - самый надёжный метод
-            if (_handleAvailable)
-            {
-                var handleFiles = await GetHandleOpenFilesAsync();
-                AddUniqueFiles(openFiles, handleFiles);
-            }
+            // НЕ используем Handle.exe для общего списка - он возвращает слишком много системных файлов
+            // Handle.exe используется только при поиске конкретного файла в GetFileUsersAsync
 
-            _logger.LogInformation("Найдено {Count} открытых файлов", openFiles.Count);
+            _logger.LogInformation("Найдено {Count} открытых файлов (SMB: {SmbCount})", 
+                openFiles.Count, smbFiles.Count);
             
             return openFiles;
         }
@@ -347,10 +344,21 @@ public class SmbFileMonitor : ISmbFileMonitor
     {
         try
         {
+            // Оборачиваем скрипт для принудительной UTF-8 кодировки
+            var wrappedScript = @"
+                $OutputEncoding = [System.Text.Encoding]::UTF8
+                [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+                [Console]::InputEncoding = [System.Text.Encoding]::UTF8
+            " + script;
+            
+            // Кодируем скрипт в Base64 для корректной передачи
+            var bytes = Encoding.Unicode.GetBytes(wrappedScript);
+            var encodedCommand = Convert.ToBase64String(bytes);
+            
             var psi = new ProcessStartInfo
             {
                 FileName = "powershell.exe",
-                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{script.Replace("\"", "\\\"")}\"",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -EncodedCommand {encodedCommand}",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -387,14 +395,101 @@ public class SmbFileMonitor : ISmbFileMonitor
 
     public async Task<List<FileUserInfo>> GetFileUsersAsync(string filePath)
     {
-        var allFiles = await GetOpenFilesAsync();
+        var result = new List<FileUserInfo>();
         
         // Нормализация пути для сравнения
         var normalizedPath = NormalizePath(filePath);
         
-        return allFiles
+        // 1. Сначала ищем в общем кэше (SMB файлы)
+        var allFiles = await GetOpenFilesAsync();
+        var smbUsers = allFiles
             .Where(f => NormalizePath(f.FilePath).Equals(normalizedPath, StringComparison.OrdinalIgnoreCase))
             .ToList();
+        
+        result.AddRange(smbUsers);
+        
+        // 2. Если не нашли и есть Handle.exe - ищем через него (для PDF и других файлов которые не блокируют SMB)
+        if (result.Count == 0 && _handleAvailable)
+        {
+            _logger.LogDebug("Файл не найден в SMB, пробуем Handle.exe для: {FilePath}", filePath);
+            var handleUsers = await GetFileUsersViaHandleAsync(filePath);
+            result.AddRange(handleUsers);
+        }
+        
+        return result;
+    }
+
+    /// <summary>
+    /// Поиск кто открыл конкретный файл через Handle.exe
+    /// </summary>
+    private async Task<List<FileUserInfo>> GetFileUsersViaHandleAsync(string filePath)
+    {
+        var openFiles = new List<FileUserInfo>();
+
+        if (!_handleAvailable || string.IsNullOrEmpty(filePath))
+            return openFiles;
+
+        try
+        {
+            // Запускаем handle.exe для поиска конкретного файла
+            var psi = new ProcessStartInfo
+            {
+                FileName = _handlePath,
+                Arguments = $"-accepteula -nobanner -u \"{filePath}\"",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                StandardOutputEncoding = Encoding.UTF8
+            };
+
+            using var process = new Process { StartInfo = psi };
+            var output = new StringBuilder();
+
+            process.OutputDataReceived += (s, e) => { if (e.Data != null) output.AppendLine(e.Data); };
+
+            process.Start();
+            process.BeginOutputReadLine();
+
+            var completed = await Task.Run(() => process.WaitForExit(10000));
+            if (!completed)
+            {
+                process.Kill();
+                return openFiles;
+            }
+
+            // Парсим вывод: Acrobat.exe pid: 1234 type: File DOMAIN\user: C:\path\file.pdf
+            var lines = output.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            var fileLineRegex = new Regex(@"^(.+?)\s+pid:\s*(\d+)\s+type:\s*\w+\s+(.+?):\s+(.+)$", RegexOptions.IgnoreCase);
+
+            foreach (var line in lines)
+            {
+                var match = fileLineRegex.Match(line.Trim());
+                if (match.Success)
+                {
+                    var processName = match.Groups[1].Value.Trim();
+                    var userName = match.Groups[3].Value.Trim();
+                    var foundPath = match.Groups[4].Value.Trim();
+
+                    openFiles.Add(new FileUserInfo
+                    {
+                        FilePath = foundPath,
+                        UserName = userName,
+                        ClientName = Environment.MachineName,
+                        OpenedAt = DateTime.Now,
+                        AccessMode = $"Handle ({processName})"
+                    });
+                }
+            }
+
+            _logger.LogDebug("Handle.exe нашёл {Count} пользователей для файла", openFiles.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Ошибка при поиске через Handle.exe");
+        }
+
+        return openFiles;
     }
 
     public async Task<List<FileUserInfo>> GetUserFilesAsync(string userName)

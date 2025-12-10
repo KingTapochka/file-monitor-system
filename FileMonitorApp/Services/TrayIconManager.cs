@@ -89,26 +89,12 @@ namespace FileMonitorApp.Services
             });
         }
 
-        public void CheckFolder(string folderPath)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                var window = new FolderUsersWindow(folderPath);
-                window.Show();
-                window.Activate();
-            });
-        }
-
         /// <summary>
-        /// Проверка файла или папки
+        /// Проверка файла или папки (папки игнорируются)
         /// </summary>
         public void CheckPath(string path)
         {
-            if (Directory.Exists(path))
-            {
-                CheckFolder(path);
-            }
-            else if (File.Exists(path))
+            if (File.Exists(path))
             {
                 CheckFile(path);
             }
