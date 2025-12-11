@@ -55,7 +55,9 @@ namespace FileMonitorApp.Services
             {
                 // Конвертируем локальный путь в серверный, если необходимо
                 var serverPath = ConvertToServerPath(filePath);
-                var encodedPath = HttpUtility.UrlEncode(serverPath);
+                // Используем Uri.EscapeDataString вместо HttpUtility.UrlEncode
+                // для правильного кодирования кириллицы и пробелов (%20 вместо +)
+                var encodedPath = Uri.EscapeDataString(serverPath);
                 var url = $"{_baseUrl}/api/files/users?filePath={encodedPath}";
 
                 var response = await _httpClient.GetAsync(url);

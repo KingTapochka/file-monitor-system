@@ -67,7 +67,6 @@
                AllowAdvertise="no"
                ConfigurableDirectory="SERVER_DIR">
         <ComponentGroupRef Id="ServerComponents" />
-        <ComponentRef Id="ServerServiceComponent" />
       </Feature>
 
       <Feature Id="ClientFeature" 

@@ -8,14 +8,14 @@
       <!-- Основной EXE файл (self-contained, включает все зависимости) -->
       <Component Id="ClientExeComponent" Guid="{66666666-6666-6666-6666-666666666661}" Bitness="always64">
         <File Id="ClientExeFile" 
-              Source="..\FileMonitorApp\bin\Release\publish\FileMonitorApp.exe" 
+              Source="..\FileMonitorApp\bin\Release\net8.0-windows\win-x64\publish\FileMonitorApp.exe" 
               KeyPath="yes" />
       </Component>
 
       <!-- Конфигурация -->
       <Component Id="ClientConfigComponent" Guid="{88888888-8888-8888-8888-888888888888}" Bitness="always64">
         <File Id="ClientConfigFile" 
-              Source="..\FileMonitorApp\bin\Release\publish\FileMonitorApp.dll.config" 
+              Source="..\FileMonitorApp\bin\Release\net8.0-windows\win-x64\publish\FileMonitorApp.dll.config" 
               KeyPath="yes" />
       </Component>
 

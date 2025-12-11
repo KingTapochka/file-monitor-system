@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using FileMonitorApp.Models;
 using FileMonitorApp.Services;
 
@@ -160,6 +162,74 @@ namespace FileMonitorApp.Views
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        private void SendMessage_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var button = sender as Button;
+                if (button?.Tag is FileUserInfo userInfo)
+                {
+                    // Получаем путь к файлу из родительского FileCheckResult
+                    var fileResult = _checkHistory.FirstOrDefault(r => r.Users.Contains(userInfo));
+                    if (fileResult == null)
+                        return;
+
+                    var currentUserName = Environment.UserName;
+                    var message = $"Пользователь {currentUserName} просит сохранить и закрыть файл {fileResult.FilePath}";
+
+                    // Отправляем сообщение через msg.exe на компьютер пользователя
+                    var processInfo = new ProcessStartInfo
+                    {
+                        FileName = "msg.exe",
+                        Arguments = $"* /server:{userInfo.ClientName} \"{message}\"",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true
+                    };
+
+                    using (var process = Process.Start(processInfo))
+                    {
+                        process?.WaitForExit(5000); // Ждем максимум 5 секунд
+                        
+                        if (process?.ExitCode == 0)
+                        {
+                            MessageBox.Show(
+                                $"Сообщение успешно отправлено пользователю {userInfo.UserName} на компьютер {userInfo.ClientName}",
+                                "Сообщение отправлено",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Information);
+                        }
+                        else
+                        {
+                            var error = process?.StandardError.ReadToEnd();
+                            MessageBox.Show(
+                                $"Не удалось отправить сообщение.\n\nВозможные причины:\n" +
+                                $"- Компьютер {userInfo.ClientName} недоступен\n" +
+                                $"- Служба сообщений отключена на удаленном компьютере\n" +
+                                $"- Недостаточно прав для отправки сообщений\n\n" +
+                                $"Технические детали: {error}",
+                                "Ошибка отправки",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Произошла ошибка при отправке сообщения:\n\n{ex.Message}\n\n" +
+                    $"Убедитесь, что:\n" +
+                    $"- У вас есть права администратора\n" +
+                    $"- Служба 'Messenger' запущена на обоих компьютерах\n" +
+                    $"- Компьютер получателя доступен в сети",
+                    "Ошибка",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
         }
     }
 }

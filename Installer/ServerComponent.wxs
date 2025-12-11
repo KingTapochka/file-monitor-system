@@ -46,10 +46,7 @@
               KeyPath="yes" />
       </Component>
 
-    </ComponentGroup>
-
-    <!-- Компонент для создания папок и реестра -->
-    <DirectoryRef Id="SERVER_DIR">
+      <!-- Компонент для создания папок и реестра (внутри ServerComponents чтобы устанавливаться вместе с exe) -->
       <Component Id="ServerServiceComponent" Guid="{55555555-5555-5555-5555-555555555555}" Bitness="always64">
         <CreateFolder />
         
@@ -62,9 +59,10 @@
           <RegistryValue Type="string" Name="Version" Value="3.4.1.0" />
         </RegistryKey>
       </Component>
-    </DirectoryRef>
 
-    <!-- Директория для логов -->
+    </ComponentGroup>
+
+    <!-- Директория для логов (объявляется до использования в ComponentGroup) -->
     <DirectoryRef Id="SERVER_DIR">
       <Directory Id="ServerLogsDir" Name="logs" />
     </DirectoryRef>
