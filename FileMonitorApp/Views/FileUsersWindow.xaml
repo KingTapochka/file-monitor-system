@@ -153,6 +153,32 @@
                         <Setter Property="IsExpanded" Value="True"/>
                         <Setter Property="Padding" Value="5,3"/>
                         <Setter Property="FontSize" Value="13"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="TreeViewItem">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition/>
+                                        </Grid.RowDefinitions>
+                                        <Border Name="Bd" Grid.Row="0"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter Name="PART_Header" 
+                                                              ContentSource="Header" 
+                                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                                        </Border>
+                                        <ItemsPresenter Name="ItemsHost" Grid.Row="1"/>
+                                    </Grid>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsExpanded" Value="false">
+                                            <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
                     </Style>
                 </TreeView.ItemContainerStyle>
                 <TreeView.Resources>
@@ -257,7 +283,7 @@
                     HorizontalAlignment="Right" 
                     Margin="0,15,0,0">
             <Button x:Name="RefreshLastButton"
-                    Content="Обновить последний" 
+                    Content="Обновить последние" 
                     Style="{StaticResource PrimaryButton}"
                     Width="160"
                     Click="RefreshLast_Click"/>
