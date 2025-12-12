@@ -34,7 +34,7 @@
         <!-- Регистрация в реестре -->
         <RegistryKey Root="HKLM" Key="SOFTWARE\FileMonitorSystem">
           <RegistryValue Type="string" Name="ClientPath" Value="[CLIENT_DIR]" KeyPath="yes" />
-          <RegistryValue Type="string" Name="Version" Value="3.4.1.0" />
+          <RegistryValue Type="string" Name="Version" Value="4.2.0.0" />
         </RegistryKey>
       </Component>
     </DirectoryRef>
